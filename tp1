@@ -1,0 +1,227 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
+#referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
+#tk_canvas_sgskip.html and the 15112 website
+import matplotlib
+import quandl
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import pandas as pd
+import sys
+from tkinter import *
+if sys.version_info[0] < 3:
+    import Tkinter as tk
+else:
+    import tkinter as tk
+import tkinter.ttk
+
+#returns main information on stock, like the closing price
+def getStockInfo(symbol, date):
+    auth_tok = "c2V_sVydLtbotC8xN8sH"
+    prices = quandl.get(symbol, trim_start = "1980-01-01", 
+    trim_end = date, authtoken=auth_tok)
+    prices = prices[['Adj. Close']]
+    return prices
+
+#returns the dataset for the stock prices that include multiple measures
+def getStockData(symbol, date):
+    auth_tok = "c2V_sVydLtbotC8xN8sH"
+    data = quandl.get(symbol, trim_start = "1980-01-01", 
+    trim_end = date, authtoken=auth_tok)
+    return data
+
+#returns stock indicators
+def getStockIndicator(symbol):
+    indicatorData = parse_finance_page(symbol)
+    return indicatorData
+
+#returns the adjusted closed price
+def getStockAdjClose(symbol, date):
+    data = getStockData(symbol, date)
+    prices = data[['Adj. Close']]
+    return prices
+
+#returns parameters that express the tone of the news and 
+#sentiment towards a company
+def getNewsSummary(stockSym, date):
+    data = getStockData(stockSym, date)
+    #names of all columns
+    columns = ["_unit_id", "_golden", "_unit_state", "_trusted_judgements", 
+    "_last_judgement_at", "positivity", "positivityConfidence", "relevance",
+    "relevanceConfidence", "articleid", "date", "headline", "positivity_gold",
+    "relevance_gold", "text"]
+    newsStats = pd.read_csv("Full-Economic-News-DFE-839861", names = columns)
+    positivity = newsStats.positivity.tolist()
+    positivityConfidence = newsStats.positivityConfidence.tolist()
+    relevance = newsStats.relevance.tolist()
+    relevanceConfidence = newsStats.relevanceConfidence.tolist()
+    positivityGold = newsStats.positivity_gold.tolist()
+    relevanceGold = newsStats.relevance_gold.tolist()
+    return [[]] + positivity + positivityConfidence + relevance + \
+    relevanceConfidence + positivityGold + relevanceGold
+
+#the following functions are retrieving key indicators
+def getPERatio(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('P/E Ratio')
+
+def getEPS(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Earnings Per Share (EPS)')
+
+def getPEG(ticker, date):
+    data = getStockData(ticker, date)
+    return ''
+
+def getBookValue(ticker, date):
+    data = getStockData(ticker, date)
+    return ''
+
+def getROE(ticker, date):
+    data = getStockData(ticker, date)
+    return ''
+
+def getBeta(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Beta')
+
+def getDividend(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Annualized Dividend')
+
+def getYield(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Current Yield')
+
+def get50DayVolume(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('50 Day Avg. Daily Volume')
+
+def get52WeekHighLow(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('52 Week High / Low')
+    
+def getBidAsk(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Best Bid / Ask')
+
+def getOneYearTarget(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('1 Year Target')
+
+def getShareVolume(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Share Volume')
+
+def getMarketCap(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Market Cap')
+
+def getExDividendDate(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Ex Dividend Date')
+    
+def getDividendPaymentDate(ticker, date):
+    data = getStockIndicator(ticker)
+    return data.get('key_stock_data').get('Dividend Payment Date')
+
+def init(data, root):
+    data.mode = "start"
+
+def displayUserEntries():
+    return ("Stock Symbol: %s\nDate: %s" % (stockSym.get(), date.get()))
+
+#draws page where the user enters the date and stock symbol
+def startRedrawAll(canvas, data, root):
+    Label(root, text = "Stock Symbol: ").grid(row = 0)
+    Label(root, text = "Date: ").grid(row = 1)
+    stockSym = Entry(root)
+    date = Entry(root)
+    stockSym.grid(row = 0, column = 1)
+    date.grid(row = 1, column = 1)
+
+#where the graph is drawn. Tried to put code in here earlier. Crashed.
+def summaryRedrawAll(canvas, data, root):
+    pass
+
+#calls different redraw all functions based on the mode
+def redrawAll(canvas, data, root):
+    if data.mode == "start":
+        startRedrawAll(canvas, data, root)
+    elif data.mode == "summary":
+        summaryRedrawAll(canvas, data, root)
+
+#will fill in once buttons are implemented
+def mousePressed(canvas, data):
+    pass
+
+#allows the user to enter in things and change the mode
+def keyPressed(canvas, data):
+    if data.mode == "start" and stockSym.get() != "" \
+    and date.get() != "" and \
+    (event.keysym == "Return" or event.keysym == "KP_ Enter"):
+        data.mode = "summary"
+
+#determines the time points when stock prices are most influenced by the 
+#time of the year
+def seasonality(sym, date):
+    correspondingDates = ("WIKI/APPL.0")
+    #may need to convert corrDates to ints.
+    allTimeData = quandl.get("WIKI/AAPL.4")
+    generalTrend = LinearRegression().fit(correspondingDates, allTimeData)
+    seasonalityIndexes = list()
+    for i in range(len(allTimeData)):
+        seasonalityIndexes.append(allTimeData[i]/seasonalityIndexes[i])
+    months = 12
+    for i in range(seasonalityIndexes):
+        #separate obtain the max and minimum for every month
+        pass
+    return (correspondingDates, seasonalityIndexes)
+
+#from 15112 website and 
+def run(width = 600, height = 600):
+    #may not be hitting this.
+    #figure out what a label object is and how it displays it.
+    def redrawAllWrapper(canvas, data):
+        canvas.delete(ALL)
+        canvas.create_rectangle(0, 0, data.width, data.height,
+        fill='white', width=0)
+        redrawAll(canvas, data)
+        canvas.update()    
+
+    def mousePressedWrapper(event, canvas, data):
+        mousePressed(event, data)
+        redrawAllWrapper(canvas, data)
+
+    def keyPressedWrapper(event, canvas, data):
+        keyPressed(event, data)
+        redrawAllWrapper(canvas, data)
+    
+    class Struct(object): pass
+    data = Struct()
+    data.width = width
+    data.height = height
+    root = tk.Tk()
+    root.resizable(width=False, height=False) # prevents resizing window
+    init(data, root)
+    graph = tkinter.ttk.Labelframe(root, text='Stock Price')
+    graph.grid(row=0, column=0, sticky='nwes', padx=3, pady=3)
+    t = np.arange(0.0,3.0,0.01)
+    df = getStockInfo("WIKI/AAPL", "2018-12-30")
+    fig = Figure(figsize=(16,6), dpi=100)
+    ax = fig.add_subplot(111)
+    df.plot(ax=ax)
+    canvas = FigureCanvasTkAgg(fig, master=graph)
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=0, column=0)
+    root.bind("<Button-1>", lambda event:
+                            mousePressedWrapper(event, canvas, data))
+    root.bind("<Key>", lambda event:
+                            keyPressedWrapper(event, canvas, data))
+    redrawAll(canvas, data, root)
+    root.mainloop()
+run()
