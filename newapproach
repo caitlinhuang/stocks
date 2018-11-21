@@ -1,32 +1,57 @@
 from tkinter import *
+import tkinter.messagebox
 
 ####################################
 # customize these functions
 ####################################
 
 def init(data):
-    # load data.xyz as appropriate
-    pass
+    data.stockSym = "hi"
+    data.clickStockEntry = False
+    data.retrieving = False
 
 def mousePressed(event, data):
-    # use event.x and event.y
-    pass
+    if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
+    event.y > 40 and event.y < 60:
+        data.clickStockEntry = True
 
 def keyPressed(event, data):
-    # use event.char and event.keysym
-    pass
+    if event.keysym == "BackSpace":
+        if len(data.stockSym) > 0:
+            data.stockSym = data.stockSym[: -2]
+    elif event.keysym != "Return" and event.keysym != "BackSpace" and \
+    len(data.stockSym) < 25:
+        data.stockSym += event.char
+    elif event.keysym == "Return":
+        data.retrieving = True
+        isValidStockSym(data)
+        
+def isValidStockSym(data):
+    try:
+        stockData = getStockInfo("WIKI/" + data.stockSym, "2018-12-30")
+    except:
+        invalidStockSym(data)
+        
+def invalidStockSym(data):
+    #global canvas
+    tkinter.messagebox.showwarning("Warning", 
+    "The Stock Symbol is invalid! Please try again.")
 
 def timerFired(data):
     pass
 
 def redrawAll(canvas, data):
     drawSearchBar(canvas, data)
+    drawUserInput(canvas, data)
     
 def drawSearchBar(canvas, data):
     canvas.create_text(data.width/2 - 200, 50, 
     text = "Enter a stock ticker symbol")
     canvas.create_rectangle(data.width/2 - 100, 40, data.width/2 + 100, 60, 
     outline = "green2", width = 4)
+    
+def drawUserInput(canvas, data):
+    canvas.create_text(data.width/2, 50, text = data.stockSym)
 
 ####################################
 # use the run function as-is
