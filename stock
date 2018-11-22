@@ -7,7 +7,7 @@ import requests
 import json
 import urllib.request
 #from alchemyapi import AlchemyAPI
-import webScraper
+from webScraper import *
 import time
 import datetime
 import unicodedata
@@ -28,6 +28,7 @@ import tkinter.simpledialog
 import os
 import threading
 import string
+import quandl
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
 #tk_canvas_sgskip.html and the 15112 website
@@ -37,10 +38,12 @@ class Stock(object):
         self.date = date
         self.symbol = symbol
         self.company = None
+        self.graph = None
 
     def setCompany(self):
         uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
         separatedName = uncleanedName.split(" ")
+        print("separatedName = ", separatedName)
         name = ""
         for word in separatedName[:-7]:
             name += word + " "
@@ -57,17 +60,21 @@ class Stock(object):
         self.chartHeight) = (self.figure.bbox.bounds)
         (self.chartY, self.chartWidth) = (int(self.chartY), 
         int(self.chartWidth))
-        self.display = PhotoImage(master = canvas, width = self.graphWidth, 
-        height = self.graphHeight)
+        self.display = PhotoImage(master = canvas, width = int(self.chartWidth), 
+        height = int(self.chartHeight))
         canvas.delete(self.graph)
-        self.graph = canvas.create_image(loc[0] + self.chartWidth/2, 
-        loc[1] + self.chartHeight/2, image = self.display)
-        tkagg.blit(self.display, self.graph.get_renderer()._renderer, 
+        self.graph = canvas.create_image(loc[0] + self.chartWidth/2,
+            loc[1] + self.chartHeight/2, image = self.display)
+        tkagg.blit(self.display, self.chart.get_renderer()._renderer,
         colormode = 2)
         
-    def getPricesOrDate(column):
-        uncleaned = quandl.get("WIKI/" + self.symbol + str(column), 
-        returns = "numpy")
+    def getPricesOrDate(self, fieldName):
+        #uncleaned = quandl.get("EOD/" + self.symbol + str(column), 
+        #returns = "numpy")
+        auth_tok = "c2V_sVydLtbotC8xN8sH"
+        stockRawData = quandl.get("EOD/"+ self.symbol, 
+        trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
+        '''
         prices = list()
         if column == 0:
             #the numpy array has the date in the 0th index of the tuples
@@ -75,33 +82,36 @@ class Stock(object):
         else:
             #the other values are in the first index
             index = 1
-        for values in uncleaned:
+        for values in stockRawData:
             prices.append(values[index])
         return prices
+        '''
+        return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
         while self.company == None:
             time.sleep(0.001)
-        auth_tok = "c2V_sVydLtbotC8xN8sH"
-        data = quandl.get(self.symbol, trim_start = "1980-01-01", 
-        trim_end = date, authtoken=auth_tok)
+        
+        print("symbol =", self.symbol)
+        print("date =", self.date)
+        #data = quandl.get("EOD/"+ self.symbol, trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
         print("in drawstockgraph")
-        open = getPricesOrDate(1)
-        high = getPricesOrDate(2)
-        low = getPricesOrDate(3)
-        close = getPricesOrDate(4)
-        date = getPricesOrDate(0)
+        open = self.getPricesOrDate('Adj_Open')
+        high = self.getPricesOrDate('Adj_High')
+        low = self.getPricesOrDate('Adj_Low')
+        close = self.getPricesOrDate('Adj_Close')
+        #date = self.getPricesOrDate(0)
         print("finished calculations")
-        chart = matplotlib.figure(figsize = (5, 4), dpi = 90)
-        graph = matplotlib.subplot(1, 1, 1)
-        graph.plot(date, high, label = "High Price", linestyle = 'o')
-        graph.plot(date, low, label = "Low Price", linestyle = "-")
-        graph.plot(date, open, label = "Open Price", linestyle = ":")
-        graph.plot(date, close, label = "Close Price")
+        chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (5, 4), dpi = 90)
+        graph = matplotlib.pyplot.subplot(1, 1, 1)
+        graph.plot(high, label = "High Price", linestyle = '-.')
+        graph.plot(low, label = "Low Price", linestyle = "-")
+        graph.plot(open, label = "Open Price", linestyle = ":")
+        graph.plot(close, label = "Close Price")
         graph.grid(True, which = "major", axis = "both", color = "blue")
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
-        matplotlib.pyplot.title(self.companyName, color = "magenta")
+        matplotlib.pyplot.title(self.company, color = "magenta")
         self.low, self.high = graph.get_ylim()
         self.figure = chart
         print("done first")
