@@ -39,7 +39,7 @@ class Stock(object):
         self.company = None
 
     def setCompany(self):
-        uncleanedName = parse_finance_page('AAPL').get("company_name")
+        uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
         separatedName = uncleanedName.split(" ")
         name = ""
         for word in separatedName[:-7]:
