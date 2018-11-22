@@ -14,8 +14,6 @@ from matplotlib.figure import Figure
 from stock import *
 import webScraper
 
-   
-    
 ####################################
 # customize these functions
 ####################################
