@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import stock
+from stock import *
 import webScraper
 
 def getStockInfo(ticker, date):
@@ -33,6 +33,7 @@ def init(data):
     data.clickDateEntry = False
     data.retrieving = False
     data.graphAvailable = False
+    data.stock = None
 
 def mousePressed(event, data):
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
@@ -67,7 +68,7 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        stock = Stock(data.stockSym, "1980-01-01")
+        data.stock = Stock(data.stockSym, "1980-01-01")
     except:
         invalidStockSym(data)
         
@@ -82,8 +83,9 @@ def timerFired(data):
 def redrawAll(canvas, data):
     drawSearchBars(canvas, data)
     drawUserInput(canvas, data)
-    if data.graphAvailable == True:
-        drawGraph(canvas, data)
+    if data.stock != None:
+        data.stock.drawStockGraph()
+        data.stock.drawStockFigure(canvas)
     
 def drawSearchBars(canvas, data):
     canvas.create_text(data.width/2 - 200, 50, 
