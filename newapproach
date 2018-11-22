@@ -1,128 +1,118 @@
-#Caitlin Huang
-#caitlinh
-#section G
-
-from tkinter import *
-import tkinter.messagebox
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.backends.tkagg as tkagg
+from matplotlib.backends.backend_tkagg import FigureCanvasAgg
+import sys
+import requests
+import json
+import urllib.request
+#from alchemyapi import AlchemyAPI
+import webScraper
+import time
+import datetime
+import unicodedata
+import pprint
+import numpy as np
+#import matplotlib.finance
+#import mpl_finance
 from matplotlib.figure import Figure
+import matplotlib.pyplot
+from tkinter import *
+import matplotlib as mpl
+import webbrowser
+import matplotlib.ticker as mticker
+import matplotlib.dates as mdates
+import tkinter.messagebox
+import tkinter.simpledialog
+#from PIL import Image, ImageTk
+import os
+import threading
+import string
 
-def getStockInfo(ticker, date):
-    auth_tok = "c2V_sVydLtbotC8xN8sH"
-    prices = quandl.get(ticker, trim_start = "1980-01-01", 
-    trim_end = date, authtoken=auth_tok)
-    prices = prices[['Adj. Close']]
-    return prices
-    
-    
-####################################
-# customize these functions
-####################################
+#referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
+#tk_canvas_sgskip.html and the 15112 website
 
-def init(data):
-    data.stockSym = ""
-    data.clickStockEntry = False
-    data.retrieving = False
-    data.graphAvailable = False
+class Stock(object):
+    def __init__(self, symbol, date):
+        self.date = date
+        self.symbol = symbol
+        self.company = None
 
-def mousePressed(event, data):
-    if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
-    event.y > 40 and event.y < 60:
-        data.clickStockEntry = True
+    def setCompany(self):
+        uncleanedName = parse_finance_page('AAPL').get("company_name")
+        separatedName = uncleanedName.split(" ")
+        name = ""
+        for word in separatedName[:-7]:
+            name += word + " "
+        self.company = name
 
-def keyPressed(event, data):
-    if event.keysym == "BackSpace":
-        if len(data.stockSym) > 0:
-            data.stockSym = data.stockSym[: -1]
-    elif event.keysym != "Return" and event.keysym != "BackSpace" and \
-    len(data.stockSym) < 25:
-        data.stockSym += event.char
-    elif event.keysym == "Return":
-        data.retrieving = True
-        isValidStockSym(data)
+    def drawStockFigure(self, canvas, loc=(650,140)):
+        #Draw a matplotlib figure onto a Tk canvas
+        #loc: location of top-left corner of figure on canvas in pixels.
+        #Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
+        self.chart = FigureCanvasAgg(self.figure)
+        self.chart.draw()
+        (self.chartX, self.chartY, self.chartWidth, 
+        self.chartHeight) = (self.figure.bbox.bounds)
+        (self.chartY, self.chartWidth) = (int(self.chartY), 
+        int(self.chartWidth))
+        self.display = PhotoImage(master = canvas, width = self.graphWidth, 
+        height = self.graphHeight)
+        canvas.delete(self.graph)
+        self.graph = canvas.create_image(loc[0] + self.chartWidth/2, 
+        loc[1] + self.chartHeight/2, image = self.display)
+        tkagg.blit(self.display, self.graph.get_renderer()._renderer, 
+        colormode = 2)
         
-def isValidStockSym(data):
-    try:
-        makeGraph(data)
-    except:
-        invalidStockSym(data)
-        
-def invalidStockSym(data):
-    #global canvas
-    tkinter.messagebox.showwarning("Warning", 
-    "The Stock Symbol is invalid! Please try again.")
+    def getPricesOrDate(column):
+        uncleaned = quandl.get("WIKI/" + self.symbol + str(column), 
+        returns = "numpy")
+        prices = list()
+        if column == 0:
+            #the numpy array has the date in the 0th index of the tuples
+            index = 0
+        else:
+            #the other values are in the first index
+            index = 1
+        for values in uncleaned:
+            prices.append(values[index])
+        return prices
 
-def timerFired(data):
-    pass
+    def drawStockGraph(self):
+        while self.company == None:
+            time.sleep(0.001)
+        auth_tok = "c2V_sVydLtbotC8xN8sH"
+        data = quandl.get(self.symbol, trim_start = "1980-01-01", 
+        trim_end = date, authtoken=auth_tok)
+        open = getPrices(1)
+        high = getPrices(2)
+        low = getPrices(3)
+        close = getPrices(4)
+        date = getPrices(0)
+        chart = matplotlib.figure(figsize = (5, 4), dpi = 90)
+        graph = matplotlib.subplot(1, 1, 1)
+        graph.plot(date, high, label = "High Price", linestyle = 'o')
+        graph.plot(date, low, label = "Low Price", linestyle = "-")
+        graph.plot(date, open, label = "Open Price", linestyle = ":")
+        graph.plot(date, close, label = "Close Price")
+        graph.grid(True, which = "major", axis = "both", color = "blue")
+        matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
+        matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
+        matplotlib.pyplot.title(self.companyName, color = "magenta")
+        self.low, self.high = graph.get_ylim()
 
-def redrawAll(canvas, data):
-    drawSearchBar(canvas, data)
-    drawUserInput(canvas, data)
-    if data.graphAvailable == True:
-        drawGraph(canvas, data)
-    
-def drawSearchBar(canvas, data):
-    canvas.create_text(data.width/2 - 200, 50, 
-    text = "Enter a stock ticker symbol")
-    canvas.create_rectangle(data.width/2 - 100, 40, data.width/2 + 100, 60, 
-    outline = "green2", width = 4)
-    
-def drawUserInput(canvas, data):
-    canvas.create_text(data.width/2, 50, text = data.stockSym)
+    def drawStockAnalysisFigure(self, canvas, loc=(650,140)):
+        pass
 
-def drawGraph(canvas, data):
-    canvas = FigureCanvasTkAgg(fig, master=graph)
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=0, column=0)
+    def getStockAnalysisData(self):
+        pass
 
-####################################
-# use the run function as-is
-####################################
+    def drawStockNewsFigure(self, canvas, loc=(650, 140)):
+        pass
 
-def run(width=300, height=300):
-    def redrawAllWrapper(canvas, data):
-        canvas.delete(ALL)
-        canvas.create_rectangle(0, 0, data.width, data.height,
-                                fill='white', width=0)
-        redrawAll(canvas, data)
-        canvas.update()    
+    def getStockNewsData(self):
+        pass
 
-    def mousePressedWrapper(event, canvas, data):
-        mousePressed(event, data)
-        redrawAllWrapper(canvas, data)
-
-    def keyPressedWrapper(event, canvas, data):
-        keyPressed(event, data)
-        redrawAllWrapper(canvas, data)
-
-    def timerFiredWrapper(canvas, data):
-        timerFired(data)
-        redrawAllWrapper(canvas, data)
-        # pause, then call timerFired again
-        canvas.after(data.timerDelay, timerFiredWrapper, canvas, data)
-    # Set up data and call init
-    class Struct(object): pass
-    data = Struct()
-    data.width = width
-    data.height = height
-    data.timerDelay = 100 # milliseconds
-    root = Tk()
-    root.resizable(width=False, height=False) # prevents resizing window
-    init(data)
-    # create the root and the canvas
-    canvas = Canvas(root, width=data.width, height=data.height)
-    canvas.configure(bd=0, highlightthickness=0)
-    canvas.pack()
-    # set up events
-    root.bind("<Button-1>", lambda event:
-                            mousePressedWrapper(event, canvas, data))
-    root.bind("<Key>", lambda event:
-                            keyPressedWrapper(event, canvas, data))
-    timerFiredWrapper(canvas, data)
-    # and launch the app
-    root.mainloop()  # blocks until window is closed
-    print("bye!")
-
-run(700, 700)
+    def __eq__(self,other):
+        return isinstance(other,Stock) and self.symbol==other.symbol\
+               and self.date==other.date
