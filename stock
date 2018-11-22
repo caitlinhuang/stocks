@@ -43,17 +43,15 @@ class Stock(object):
     def setCompany(self):
         uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
         separatedName = uncleanedName.split(" ")
-        print("separatedName = ", separatedName)
         name = ""
         for word in separatedName[:-7]:
             name += word + " "
         self.company = name
 
-    def drawStockFigure(self, canvas, loc=(650,140)):
+    def drawStockFigure(self, canvas, loc=(50,140)):
         #Draw a matplotlib figure onto a Tk canvas
         #loc: location of top-left corner of figure on canvas in pixels.
         #Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
-        print("drawing")
         self.chart = FigureCanvasAgg(self.figure)
         self.chart.draw()
         (self.chartX, self.chartY, self.chartWidth, 
@@ -69,39 +67,20 @@ class Stock(object):
         colormode = 2)
         
     def getPricesOrDate(self, fieldName):
-        #uncleaned = quandl.get("EOD/" + self.symbol + str(column), 
-        #returns = "numpy")
         auth_tok = "c2V_sVydLtbotC8xN8sH"
         stockRawData = quandl.get("EOD/"+ self.symbol, 
         trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
-        '''
-        prices = list()
-        if column == 0:
-            #the numpy array has the date in the 0th index of the tuples
-            index = 0
-        else:
-            #the other values are in the first index
-            index = 1
-        for values in stockRawData:
-            prices.append(values[index])
-        return prices
-        '''
         return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
         while self.company == None:
             time.sleep(0.001)
-        
-        print("symbol =", self.symbol)
-        print("date =", self.date)
         #data = quandl.get("EOD/"+ self.symbol, trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
-        print("in drawstockgraph")
         open = self.getPricesOrDate('Adj_Open')
         high = self.getPricesOrDate('Adj_High')
         low = self.getPricesOrDate('Adj_Low')
         close = self.getPricesOrDate('Adj_Close')
         #date = self.getPricesOrDate(0)
-        print("finished calculations")
         chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (5, 4), dpi = 90)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
         graph.plot(high, label = "High Price", linestyle = '-.')
@@ -114,15 +93,14 @@ class Stock(object):
         matplotlib.pyplot.title(self.company, color = "magenta")
         self.low, self.high = graph.get_ylim()
         self.figure = chart
-        print("done first")
 
-    def drawStockAnalysisFigure(self, canvas, loc=(650,140)):
+    def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         pass
 
     def getStockAnalysisData(self):
         pass
 
-    def drawStockNewsFigure(self, canvas, loc=(650, 140)):
+    def drawStockNewsFigure(self, canvas, loc=(50, 140)):
         pass
 
     def getStockNewsData(self):
