@@ -1,14 +1,31 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
 from tkinter import *
 import tkinter.messagebox
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
+def getStockInfo(ticker, date):
+    auth_tok = "c2V_sVydLtbotC8xN8sH"
+    prices = quandl.get(ticker, trim_start = "1980-01-01", 
+    trim_end = date, authtoken=auth_tok)
+    prices = prices[['Adj. Close']]
+    return prices
+    
+    
 ####################################
 # customize these functions
 ####################################
 
 def init(data):
-    data.stockSym = "hi"
+    data.stockSym = ""
     data.clickStockEntry = False
     data.retrieving = False
+    data.graphAvailable = False
 
 def mousePressed(event, data):
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
@@ -18,7 +35,7 @@ def mousePressed(event, data):
 def keyPressed(event, data):
     if event.keysym == "BackSpace":
         if len(data.stockSym) > 0:
-            data.stockSym = data.stockSym[: -2]
+            data.stockSym = data.stockSym[: -1]
     elif event.keysym != "Return" and event.keysym != "BackSpace" and \
     len(data.stockSym) < 25:
         data.stockSym += event.char
@@ -28,7 +45,7 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        stockData = getStockInfo("WIKI/" + data.stockSym, "2018-12-30")
+        makeGraph(data)
     except:
         invalidStockSym(data)
         
@@ -43,6 +60,8 @@ def timerFired(data):
 def redrawAll(canvas, data):
     drawSearchBar(canvas, data)
     drawUserInput(canvas, data)
+    if data.graphAvailable == True:
+        drawGraph(canvas, data)
     
 def drawSearchBar(canvas, data):
     canvas.create_text(data.width/2 - 200, 50, 
@@ -52,6 +71,11 @@ def drawSearchBar(canvas, data):
     
 def drawUserInput(canvas, data):
     canvas.create_text(data.width/2, 50, text = data.stockSym)
+
+def drawGraph(canvas, data):
+    canvas = FigureCanvasTkAgg(fig, master=graph)
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=0, column=0)
 
 ####################################
 # use the run function as-is
