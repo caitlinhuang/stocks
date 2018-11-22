@@ -69,6 +69,7 @@ def keyPressed(event, data):
 def isValidStockSym(data):
     try:
         data.stock = Stock(data.stockSym, "1980-01-01")
+        data.stock.setCompany()
     except:
         invalidStockSym(data)
         
