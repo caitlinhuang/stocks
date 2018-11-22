@@ -14,13 +14,7 @@ from matplotlib.figure import Figure
 from stock import *
 import webScraper
 
-def getStockInfo(ticker, date):
-    auth_tok = "c2V_sVydLtbotC8xN8sH"
-    prices = quandl.get(ticker, trim_start = "1980-01-01", 
-    trim_end = date, authtoken=auth_tok)
-    prices = prices[['Adj. Close']]
-    return prices
-    
+   
     
 ####################################
 # customize these functions
@@ -68,7 +62,7 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        data.stock = Stock(data.stockSym, "1980-01-01")
+        data.stock = Stock(data.stockSym, data.date)
         data.stock.setCompany()
     except:
         invalidStockSym(data)
