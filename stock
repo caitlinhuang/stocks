@@ -1,0 +1,118 @@
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.backends.tkagg as tkagg
+from matplotlib.backends.backend_tkagg import FigureCanvasAgg
+import sys
+import requests
+import json
+import urllib.request
+#from alchemyapi import AlchemyAPI
+import webScraper
+import time
+import datetime
+import unicodedata
+import pprint
+import numpy as np
+#import matplotlib.finance
+#import mpl_finance
+from matplotlib.figure import Figure
+import matplotlib.pyplot
+from tkinter import *
+import matplotlib as mpl
+import webbrowser
+import matplotlib.ticker as mticker
+import matplotlib.dates as mdates
+import tkinter.messagebox
+import tkinter.simpledialog
+#from PIL import Image, ImageTk
+import os
+import threading
+import string
+
+#referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
+#tk_canvas_sgskip.html and the 15112 website
+
+class Stock(object):
+    def __init__(self, symbol, date):
+        self.date = date
+        self.symbol = symbol
+        self.company = None
+
+    def setCompany(self):
+        uncleanedName = parse_finance_page('AAPL').get("company_name")
+        separatedName = uncleanedName.split(" ")
+        name = ""
+        for word in separatedName[:-7]:
+            name += word + " "
+        self.company = name
+
+    def drawStockFigure(self, canvas, loc=(650,140)):
+        #Draw a matplotlib figure onto a Tk canvas
+        #loc: location of top-left corner of figure on canvas in pixels.
+        #Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
+        self.chart = FigureCanvasAgg(self.figure)
+        self.chart.draw()
+        (self.chartX, self.chartY, self.chartWidth, 
+        self.chartHeight) = (self.figure.bbox.bounds)
+        (self.chartY, self.chartWidth) = (int(self.chartY), 
+        int(self.chartWidth))
+        self.display = PhotoImage(master = canvas, width = self.graphWidth, 
+        height = self.graphHeight)
+        canvas.delete(self.graph)
+        self.graph = canvas.create_image(loc[0] + self.chartWidth/2, 
+        loc[1] + self.chartHeight/2, image = self.display)
+        tkagg.blit(self.display, self.graph.get_renderer()._renderer, 
+        colormode = 2)
+        
+    def getPricesOrDate(column):
+        uncleaned = quandl.get("WIKI/" + self.symbol + str(column), 
+        returns = "numpy")
+        prices = list()
+        if column == 0:
+            #the numpy array has the date in the 0th index of the tuples
+            index = 0
+        else:
+            #the other values are in the first index
+            index = 1
+        for values in uncleaned:
+            prices.append(values[index])
+        return prices
+
+    def drawStockGraph(self):
+        while self.company == None:
+            time.sleep(0.001)
+        auth_tok = "c2V_sVydLtbotC8xN8sH"
+        data = quandl.get(self.symbol, trim_start = "1980-01-01", 
+        trim_end = date, authtoken=auth_tok)
+        open = getPrices(1)
+        high = getPrices(2)
+        low = getPrices(3)
+        close = getPrices(4)
+        date = getPrices(0)
+        chart = matplotlib.figure(figsize = (5, 4), dpi = 90)
+        graph = matplotlib.subplot(1, 1, 1)
+        graph.plot(date, high, label = "High Price", linestyle = 'o')
+        graph.plot(date, low, label = "Low Price", linestyle = "-")
+        graph.plot(date, open, label = "Open Price", linestyle = ":")
+        graph.plot(date, close, label = "Close Price")
+        graph.grid(True, which = "major", axis = "both", color = "blue")
+        matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
+        matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
+        matplotlib.pyplot.title(self.companyName, color = "magenta")
+        self.low, self.high = graph.get_ylim()
+
+    def drawStockAnalysisFigure(self, canvas, loc=(650,140)):
+        pass
+
+    def getStockAnalysisData(self):
+        pass
+
+    def drawStockNewsFigure(self, canvas, loc=(650, 140)):
+        pass
+
+    def getStockNewsData(self):
+        pass
+
+    def __eq__(self,other):
+        return isinstance(other,Stock) and self.symbol==other.symbol\
+               and self.date==other.date
