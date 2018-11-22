@@ -84,11 +84,11 @@ class Stock(object):
         auth_tok = "c2V_sVydLtbotC8xN8sH"
         data = quandl.get(self.symbol, trim_start = "1980-01-01", 
         trim_end = date, authtoken=auth_tok)
-        open = getPrices(1)
-        high = getPrices(2)
-        low = getPrices(3)
-        close = getPrices(4)
-        date = getPrices(0)
+        open = getPricesOrDate(1)
+        high = getPricesOrDate(2)
+        low = getPricesOrDate(3)
+        close = getPricesOrDate(4)
+        date = getPricesOrDate(0)
         chart = matplotlib.figure(figsize = (5, 4), dpi = 90)
         graph = matplotlib.subplot(1, 1, 1)
         graph.plot(date, high, label = "High Price", linestyle = 'o')
