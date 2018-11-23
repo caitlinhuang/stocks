@@ -1,111 +1,197 @@
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.backends.tkagg as tkagg
-from matplotlib.backends.backend_tkagg import FigureCanvasAgg
-import sys
-import requests
-import json
-import urllib.request
-#from alchemyapi import AlchemyAPI
-from webScraper import *
-import time
-import datetime
-import unicodedata
-import pprint
-import numpy as np
-#import matplotlib.finance
-#import mpl_finance
-from matplotlib.figure import Figure
-import matplotlib.pyplot
-from tkinter import *
-import matplotlib as mpl
-import webbrowser
-import matplotlib.ticker as mticker
-import matplotlib.dates as mdates
-import tkinter.messagebox
-import tkinter.simpledialog
-#from PIL import Image, ImageTk
-import os
-import threading
-import string
-import quandl
+#Caitlin Huang
+#caitlinh
+#section G
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
 #tk_canvas_sgskip.html and the 15112 website
 
-class Stock(object):
-    def __init__(self, symbol, date):
-        self.date = date
-        self.symbol = symbol
-        self.company = None
-        self.graph = None
+from tkinter import *
+import tkinter.messagebox
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from stock import *
+import webScraper
 
-    def setCompany(self):
-        uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
-        separatedName = uncleanedName.split(" ")
-        name = ""
-        for word in separatedName[:-7]:
-            name += word + " "
-        self.company = name
+####################################
+# customize these functions
+####################################
 
-    def drawStockFigure(self, canvas, loc=(50,140)):
-        #Draw a matplotlib figure onto a Tk canvas
-        #loc: location of top-left corner of figure on canvas in pixels.
-        #Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
-        self.chart = FigureCanvasAgg(self.figure)
-        self.chart.draw()
-        (self.chartX, self.chartY, self.chartWidth, 
-        self.chartHeight) = (self.figure.bbox.bounds)
-        (self.chartY, self.chartWidth) = (int(self.chartY), 
-        int(self.chartWidth))
-        self.display = PhotoImage(master = canvas, width = int(self.chartWidth), 
-        height = int(self.chartHeight))
-        canvas.delete(self.graph)
-        self.graph = canvas.create_image(loc[0] + self.chartWidth/2,
-            loc[1] + self.chartHeight/2, image = self.display)
-        tkagg.blit(self.display, self.chart.get_renderer()._renderer,
-        colormode = 2)
+def init(data):
+    data.stockSym = ""
+    data.date = ""
+    data.clickStockEntry = False
+    data.clickDateEntry = False
+    data.clickOneDay = False
+    data.clickOneWeek = False
+    data.clickOneMonth = False
+    data.clickSixMonth = False
+    data.clickOneYear = False
+    data.clickFiveYears = False
+    data.thirtyDayPrediction = False
+    data.zoomClicks = [data.clickOneDay, data.clickOneWeek, data.clickOneMonth,
+    data.clickSixMonth, data.clickOneYear, data.clickFiveYears, 
+    data.thirtyDayPrediction]
+    data.retrieving = False
+    data.graphAvailable = False
+    data.stock = None
+    
+def mousePressedZoom(event, data):
+    xStartButtons = 50
+    yStartButtons = 95
+    buttonHeight = 40
+    buttonWidth = 80
+    numButtons = 7
+    if event.x > xStartButtons and \
+    event.x < xStartButtons + (numButtons * buttonWidth) and \
+    event.y > yStartButtons and event.y < yStartButtons + buttonHeight:
+        data.clickStockEntry = False
+        data.clickDateEntry = False
+        indexZoomClick = (event.x - xStartButtons) % buttonWidth
+        print("x", event.x)
+        print("zoom index", indexZoomClick)
+        data.zoomClicks[indexZoomClick] = True
+        for i in range(len(data.zoomClicks)):
+            if i != indexZoomClick:
+                data.zoomClicks[i] = False
+
+def mousePressed(event, data):
+    if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
+    event.y > 40 and event.y < 60:
+        data.clickStockEntry = True
+        for i in range(len(data.zoomClicks)):
+            data.zoomClicks[i] = False
+    elif event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
+    event.y > 70 and event.y < 90:
+        data.clickStockEntry = False
+        data.clickDateEntry = True
+        for i in range(len(data.zoomClicks)):
+            data.zoomClicks[i] = False
+    mousePressedZoom(event, data)
+
+def keyPressed(event, data):
+    if data.clickStockEntry == True:
+        if event.keysym == "BackSpace":
+            if len(data.stockSym) > 0:
+                data.stockSym = data.stockSym[: -1]
+        elif event.keysym != "Return" and event.keysym != "BackSpace" and \
+        len(data.stockSym) < 25:
+            data.stockSym += event.char
+        elif event.keysym == "Return":
+            data.retrieving = True
+            isValidStockSym(data)
+    elif data.clickDateEntry == True:
+        if event.keysym == "BackSpace":
+            if len(data.date) > 0:
+                data.date = data.date[: -1]
+        elif event.keysym != "Return" and event.keysym != "BackSpace" and \
+        len(data.date) < 10:
+            data.date += event.char
+        elif event.keysym == "Return":
+            data.retrieving = True
+            isValidStockSym(data)
         
-    def getPricesOrDate(self, fieldName):
-        auth_tok = "c2V_sVydLtbotC8xN8sH"
-        stockRawData = quandl.get("EOD/"+ self.symbol, 
-        trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
-        return stockRawData.get(fieldName)
+def isValidStockSym(data):
+    try:
+        data.stock = Stock(data.stockSym, data.date)
+        data.stock.setCompany()
+    except:
+        invalidStockSym(data)
+        
+def invalidStockSym(data):
+    #global canvas
+    tkinter.messagebox.showwarning("Warning", 
+    "The Stock Symbol is invalid! Please try again.")
 
-    def drawStockGraph(self):
-        while self.company == None:
-            time.sleep(0.001)
-        #data = quandl.get("EOD/"+ self.symbol, trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
-        open = self.getPricesOrDate('Adj_Open')
-        high = self.getPricesOrDate('Adj_High')
-        low = self.getPricesOrDate('Adj_Low')
-        close = self.getPricesOrDate('Adj_Close')
-        #date = self.getPricesOrDate(0)
-        chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (5, 4), dpi = 90)
-        graph = matplotlib.pyplot.subplot(1, 1, 1)
-        graph.plot(high, label = "High Price", linestyle = '-.')
-        graph.plot(low, label = "Low Price", linestyle = "-")
-        graph.plot(open, label = "Open Price", linestyle = ":")
-        graph.plot(close, label = "Close Price")
-        graph.grid(True, which = "major", axis = "both", color = "blue")
-        matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
-        matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
-        matplotlib.pyplot.title(self.company, color = "magenta")
-        self.low, self.high = graph.get_ylim()
-        self.figure = chart
+def timerFired(data):
+    pass
 
-    def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
-        pass
+def redrawAll(canvas, data):
+    drawSearchBars(canvas, data)
+    drawUserInput(canvas, data)
+    if data.stock != None:
+        drawZoomButtons(canvas, data)
+        data.stock.drawStockGraph()
+        data.stock.drawStockFigure(canvas)
+        
+def drawZoomButtons(canvas, data):
+    xStartButtons = 50
+    yStartButtons = 95
+    buttonHeight = 40
+    buttonWidth = 80
+    numButtons = 7
+    timespans = ["1 Day", "1 Week", "1 Month", "6 Months",
+    "1 Year", "5 Years", "Thirty-day\nForecast"]
+    for i in range(numButtons):
+        color = "DarkOrchid1"
+        if i % 2 == 0:
+            color = "cyan"
+        canvas.create_rectangle(xStartButtons + i * buttonWidth, yStartButtons, 
+        xStartButtons + (i + 1) * buttonWidth, yStartButtons + buttonHeight, 
+        fill = color)
+        canvas.create_text(xStartButtons + buttonWidth/2 + buttonWidth * i, 
+        yStartButtons + buttonHeight/2, text = timespans[i])
+    
+def drawSearchBars(canvas, data):
+    canvas.create_text(data.width/2 - 200, 50, 
+    text = "Enter a stock ticker symbol")
+    canvas.create_rectangle(data.width/2 - 100, 40, data.width/2 + 100, 60, 
+    outline = "green2", width = 4)
+    canvas.create_text(data.width/2 - 180, 80, text = "Enter the last date")
+    canvas.create_rectangle(data.width/2 - 100, 70, data.width/2 + 100, 90,
+    outline = "green2", width = 4)
+    
+def drawUserInput(canvas, data):
+    canvas.create_text(data.width/2, 50, text = data.stockSym)
+    canvas.create_text(data.width/2, 80, text = data.date)
 
-    def getStockAnalysisData(self):
-        pass
+####################################
+# use the run function as-is
+####################################
 
-    def drawStockNewsFigure(self, canvas, loc=(50, 140)):
-        pass
+def run(width=300, height=300):
+    def redrawAllWrapper(canvas, data):
+        canvas.delete(ALL)
+        canvas.create_rectangle(0, 0, data.width, data.height,
+                                fill='white', width=0)
+        redrawAll(canvas, data)
+        canvas.update()    
 
-    def getStockNewsData(self):
-        pass
+    def mousePressedWrapper(event, canvas, data):
+        mousePressed(event, data)
+        redrawAllWrapper(canvas, data)
 
-    def __eq__(self,other):
-        return isinstance(other,Stock) and self.symbol==other.symbol\
-               and self.date==other.date
+    def keyPressedWrapper(event, canvas, data):
+        keyPressed(event, data)
+        redrawAllWrapper(canvas, data)
+
+    def timerFiredWrapper(canvas, data):
+        timerFired(data)
+        redrawAllWrapper(canvas, data)
+        # pause, then call timerFired again
+        canvas.after(data.timerDelay, timerFiredWrapper, canvas, data)
+    # Set up data and call init
+    class Struct(object): pass
+    data = Struct()
+    data.width = width
+    data.height = height
+    data.timerDelay = 100 # milliseconds
+    root = Tk()
+    root.resizable(width=False, height=False) # prevents resizing window
+    init(data)
+    # create the root and the canvas
+    canvas = Canvas(root, width=data.width, height=data.height)
+    canvas.configure(bd=0, highlightthickness=0)
+    canvas.pack()
+    # set up events
+    root.bind("<Button-1>", lambda event:
+                            mousePressedWrapper(event, canvas, data))
+    root.bind("<Key>", lambda event:
+                            keyPressedWrapper(event, canvas, data))
+    timerFiredWrapper(canvas, data)
+    # and launch the app
+    root.mainloop()  # blocks until window is closed
+    print("bye!")
+
+run(800, 700)
