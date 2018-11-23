@@ -48,9 +48,7 @@ def mousePressedZoom(event, data):
     event.y > yStartButtons and event.y < yStartButtons + buttonHeight:
         data.clickStockEntry = False
         data.clickDateEntry = False
-        indexZoomClick = (event.x - xStartButtons) % buttonWidth
-        print("x", event.x)
-        print("zoom index", indexZoomClick)
+        indexZoomClick = (event.x - xStartButtons)//buttonWidth
         data.zoomClicks[indexZoomClick] = True
         for i in range(len(data.zoomClicks)):
             if i != indexZoomClick:
