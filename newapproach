@@ -23,19 +23,23 @@ def init(data):
     data.date = ""
     data.clickStockEntry = False
     data.clickDateEntry = False
-    data.clickOneDay = False
+    data.clickMax = False
     data.clickOneWeek = False
     data.clickOneMonth = False
     data.clickSixMonth = False
     data.clickOneYear = False
     data.clickFiveYears = False
     data.thirtyDayPrediction = False
-    data.zoomClicks = [data.clickOneDay, data.clickOneWeek, data.clickOneMonth,
-    data.clickSixMonth, data.clickOneYear, data.clickFiveYears, 
+    data.zoomClicks = [data.clickOneWeek, data.clickOneMonth,
+    data.clickSixMonth, data.clickOneYear, data.clickFiveYears, data.clickMax, 
     data.thirtyDayPrediction]
     data.retrieving = False
     data.graphAvailable = False
     data.stock = None
+    data.mouseOnGraph = False
+    #parameters for where the mouse is pointing to on the figure
+    data.figX = 0
+    data.figY = 0
     
 def mousePressedZoom(event, data):
     xStartButtons = 50
@@ -67,6 +71,12 @@ def mousePressed(event, data):
         for i in range(len(data.zoomClicks)):
             data.zoomClicks[i] = False
     mousePressedZoom(event, data)
+    
+def mouseMovement(event, data):
+    if event.y > 183 and event.y < 590 and event.x > 107 and event.x < 590:
+        data.figX = event.x
+        data.figY = event.y
+        data.mouseOnGraph = True
 
 def keyPressed(event, data):
     if data.clickStockEntry == True:
@@ -112,7 +122,11 @@ def redrawAll(canvas, data):
         drawZoomButtons(canvas, data)
         data.stock.drawStockGraph()
         data.stock.drawStockFigure(canvas)
-        
+        data.stock.drawStockAnalysisFigure(canvas)
+        data.stock.drawStockNewsFigure(canvas)
+        if data.mouseOnGraph == True:
+            data.stock.drawPrices(canvas, data.figX, data.figY)
+    
 def drawZoomButtons(canvas, data):
     xStartButtons = 50
     yStartButtons = 95
@@ -151,13 +165,17 @@ def drawUserInput(canvas, data):
 def run(width=300, height=300):
     def redrawAllWrapper(canvas, data):
         canvas.delete(ALL)
-        canvas.create_rectangle(0, 0, data.width, data.height,
-                                fill='white', width=0)
+        #canvas.create_rectangle(0, 0, data.width, data.height,
+                                #fill='white', width=0)
         redrawAll(canvas, data)
         canvas.update()    
 
     def mousePressedWrapper(event, canvas, data):
         mousePressed(event, data)
+        redrawAllWrapper(canvas, data)
+        
+    def mouseMovementWrapper(event, canvas, data):
+        mouseMovement(event, data)
         redrawAllWrapper(canvas, data)
 
     def keyPressedWrapper(event, canvas, data):
@@ -174,7 +192,7 @@ def run(width=300, height=300):
     data = Struct()
     data.width = width
     data.height = height
-    data.timerDelay = 100 # milliseconds
+    data.timerDelay = 0 # milliseconds
     root = Tk()
     root.resizable(width=False, height=False) # prevents resizing window
     init(data)
@@ -187,6 +205,8 @@ def run(width=300, height=300):
                             mousePressedWrapper(event, canvas, data))
     root.bind("<Key>", lambda event:
                             keyPressedWrapper(event, canvas, data))
+    canvas.bind("<Motion>", lambda event: mouseMovementWrapper(event, canvas,
+    data))
     timerFiredWrapper(canvas, data)
     # and launch the app
     root.mainloop()  # blocks until window is closed
