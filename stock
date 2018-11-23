@@ -80,8 +80,7 @@ class Stock(object):
         high = self.getPricesOrDate('Adj_High')
         low = self.getPricesOrDate('Adj_Low')
         close = self.getPricesOrDate('Adj_Close')
-        #date = self.getPricesOrDate(0)
-        chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (5, 4), dpi = 90)
+        chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (6, 4), dpi = 90)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
         graph.plot(high, label = "High Price", linestyle = '-.')
         graph.plot(low, label = "Low Price", linestyle = "-")
@@ -93,15 +92,29 @@ class Stock(object):
         matplotlib.pyplot.title(self.company, color = "magenta")
         self.low, self.high = graph.get_ylim()
         self.figure = chart
+        
+    def drawPrices(self, canvas, x, y):
+        highPixel = 183
+        lowPixel = 499
+        yChange = abs(y - lowPixel)
+        difference = abs(self.high - self.low)
+        proportionGraph = difference/(lowPixel - highPixel)
+        priceDisplay = proportionGraph * yChange
+        canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10, outline = "gold")
+        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
 
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
-        pass
-
+        canvas.create_rectangle(loc[0], loc[1] + 400,
+        loc[0] + 250, loc[1] + 525)
+        canvas.create_text((loc[0] + 80, loc[1] + 420),
+        text = "Stock Statistics Analysis Data")
+        
     def getStockAnalysisData(self):
         pass
 
     def drawStockNewsFigure(self, canvas, loc=(50, 140)):
-        pass
+        canvas.create_rectangle(loc[0]+300, loc[1]+400, loc[0]+600, loc[1]+525)
+        canvas.create_text((loc[0]+380, loc[1]+420), text="News Summary")
 
     def getStockNewsData(self):
         pass
