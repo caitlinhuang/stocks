@@ -2,16 +2,11 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.backends.tkagg as tkagg
 from matplotlib.backends.backend_tkagg import FigureCanvasAgg
-import sys
 import requests
 import json
-import urllib.request
-#from alchemyapi import AlchemyAPI
 from webScraper import *
 import time
 import datetime
-import unicodedata
-import pprint
 import numpy as np
 #import matplotlib.finance
 #import mpl_finance
@@ -19,14 +14,12 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot
 from tkinter import *
 import matplotlib as mpl
-import webbrowser
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import tkinter.messagebox
 import tkinter.simpledialog
 #from PIL import Image, ImageTk
 import os
-import threading
 import string
 import quandl
 
@@ -34,8 +27,8 @@ import quandl
 #tk_canvas_sgskip.html and the 15112 website
 
 class Stock(object):
-    def __init__(self, symbol, date):
-        self.date = date
+    def __init__(self, symbol):
+        #self.date = date
         self.symbol = symbol
         self.company = None
         self.graph = None
@@ -66,26 +59,21 @@ class Stock(object):
         tkagg.blit(self.display, self.chart.get_renderer()._renderer,
         colormode = 2)
         
-    def getPricesOrDate(self, fieldName):
+    def getPrices(self, fieldName):
         auth_tok = "c2V_sVydLtbotC8xN8sH"
+        uncleanedDate = str(datetime.datetime.now())
+        lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/"+ self.symbol, 
-        trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
+        trim_start = "1980-01-01", trim_end = lstDate[0], authtoken=auth_tok)
         return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
         while self.company == None:
             time.sleep(0.001)
-        #data = quandl.get("EOD/"+ self.symbol, trim_start = "1980-01-01", trim_end = self.date, authtoken=auth_tok)
-        open = self.getPricesOrDate('Adj_Open')
-        high = self.getPricesOrDate('Adj_High')
-        low = self.getPricesOrDate('Adj_Low')
-        close = self.getPricesOrDate('Adj_Close')
+        price = self.getPrices('Adj_Close')
         chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (6, 4), dpi = 90)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
-        graph.plot(high, label = "High Price", linestyle = '-.')
-        graph.plot(low, label = "Low Price", linestyle = "-")
-        graph.plot(open, label = "Open Price", linestyle = ":")
-        graph.plot(close, label = "Close Price")
+        graph.plot(price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
@@ -106,7 +94,7 @@ class Stock(object):
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         canvas.create_rectangle(loc[0], loc[1] + 400,
         loc[0] + 250, loc[1] + 525)
-        canvas.create_text((loc[0] + 80, loc[1] + 420),
+        canvas.create_text((loc[0] + 100, loc[1] + 420),
         text = "Stock Statistics Analysis Data")
         
     def getStockAnalysisData(self):
@@ -120,5 +108,4 @@ class Stock(object):
         pass
 
     def __eq__(self,other):
-        return isinstance(other,Stock) and self.symbol==other.symbol\
-               and self.date==other.date
+        return isinstance(other,Stock) and self.symbol==other.symbol
