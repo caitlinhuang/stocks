@@ -22,13 +22,14 @@ import tkinter.simpledialog
 import os
 import string
 import quandl
+from newsPreProcess import newsPreProcess
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
 #tk_canvas_sgskip.html and the 15112 website
 
 class Stock(object):
-    def __init__(self, symbol):
-        #self.date = date
+    def __init__(self, symbol, date):
+        self.date = date
         self.symbol = symbol
         self.company = None
         self.graph = None
@@ -64,7 +65,7 @@ class Stock(object):
         uncleanedDate = str(datetime.datetime.now())
         lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/"+ self.symbol, 
-        trim_start = "1980-01-01", trim_end = lstDate[0], authtoken=auth_tok)
+        trim_start = self.date, trim_end = lstDate[0], authtoken=auth_tok)
         return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
@@ -103,9 +104,13 @@ class Stock(object):
     def drawStockNewsFigure(self, canvas, loc=(50, 140)):
         canvas.create_rectangle(loc[0]+300, loc[1]+400, loc[0]+600, loc[1]+525)
         canvas.create_text((loc[0]+380, loc[1]+420), text="News Summary")
+        sScore, rScore = self.getStockNewsData()
+        canvas.create_text((loc[0]+380, loc[1]+450), text="News Sentiment = "+ str(sScore))
+        canvas.create_text((loc[0]+380, loc[1]+480), text="News Relevance = "+ str(rScore))
 
     def getStockNewsData(self):
-        pass
+        sScore, rScore = newsPreProcess("/Users/caitlinhuang/Desktop/15112/termproject/news/Full-Economic-NewsDFE-839861.csv", self.symbol)
+        return sScore, rScore
 
     def __eq__(self,other):
         return isinstance(other,Stock) and self.symbol==other.symbol
