@@ -13,6 +13,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from stock import *
 import webScraper
+import datetime
+import dateutil.relativedelta
 
 ####################################
 # customize these functions
@@ -20,23 +22,17 @@ import webScraper
 
 def init(data):
     data.stockSym = ""
-    #data.date = ""
+    data.now = datetime.datetime.now()
+    data.startDate = ""
     data.clickStockEntry = False
     data.clickOpen = False
     data.clickClose = False
     data.clickHigh = False
     data.clickLow = False
     data.clickMax = False
-    data.typesPrice = [data.clickOpen, data.clickClose, data.clickHigh, data.clickLow]
-    data.clickOneWeek = False
-    data.clickOneMonth = False
-    data.clickSixMonth = False
-    data.clickOneYear = False
-    data.clickFiveYears = False
-    data.thirtyDayPrediction = False
-    data.zoomClicks = [data.clickOneWeek, data.clickOneMonth,
-    data.clickSixMonth, data.clickOneYear, data.clickFiveYears, data.clickMax, 
-    data.thirtyDayPrediction]
+    #data.typesPrice = [data.clickOpen, data.clickClose, data.clickHigh, data.clickLow]
+    data.timeFrameStatus = "1 Week"
+    data.timeFrames = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", "Max", "30 Day Prediction"]
     data.retrieving = False
     data.graphAvailable = False
     data.stock = None
@@ -57,21 +53,35 @@ def mousePressedZoom(event, data):
         data.clickStockEntry = False
         #data.clickDateEntry = False
         indexZoomClick = (event.x - xStartButtons)//buttonWidth
-        data.zoomClicks[indexZoomClick] = True
-        for i in range(len(data.zoomClicks)):
-            if i != indexZoomClick:
-                data.zoomClicks[i] = False
-                
-def resetButtonClicks(data):
-    for i in range(len(data.zoomClicks)):
-        data.zoomClicks[i] = False
-    #for i in range(len(data.typesPrice)):
-        #data.typesPrice[i] = False
-
+        data.timeFrameStatus = data.timeFrames[indexZoomClick]
+        if data.timeFrameStatus == "1 Week":
+            startDateUncleaned = str(data.now - datetime.timedelta(days = 7))
+            data.startDate = startDateUncleaned[:10]
+        elif data.timeFrameStatus == "1 Month":
+            data.startDate = data.now - \
+            dateutil.relativedelta.relativedelta(months = 1)
+            data.startDate = str(data.startDate)
+            data.startDate = data.startDate[:10]
+        elif data.timeFrameStatus == "6 Months":
+            data.startDate = data.now - \
+            dateutil.relativedelta.relativedelta(months = 6)
+            data.startDate = str(data.startDate)
+            data.startDate = data.startDate[:10]
+        elif data.timeFrameStatus == "1 Year" or \
+        data.timeFrameStatus == "5 Years":
+            uncleanedNow = str(data.now)
+            currYear = int(uncleanedNow[:4])
+            if data.timeFrameStatus == "1 Year":
+                data.startDate = str(currYear - 1) + uncleanedNow[4: 10]
+            else:
+                data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
+        else:
+            data.startDate = "1980-01-01"
+        isValidStockSym(data)
+            
 def mousePressed(event, data):
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
     event.y > 40 and event.y < 60:
-        resetButtonClicks(data)
         data.clickStockEntry = True
     mousePressedZoom(event, data)
     
@@ -95,7 +105,7 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        data.stock = Stock(data.stockSym)
+        data.stock = Stock(data.stockSym, data.startDate)
         data.stock.setCompany()
     except:
         invalidStockSym(data)
@@ -127,8 +137,8 @@ def drawZoomButtons(canvas, data):
     buttonHeight = 40
     buttonWidth = 80
     numButtons = 7
-    timespans = ["1 Week", "1 Month", "6 Months",
-    "1 Year", "5 Years", "Max", "Thirty-day\nForecast"]
+    timespans = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", 
+    "Max", "Thirty-day\nForecast"]
     for i in range(numButtons):
         color = "DarkOrchid1"
         if i % 2 == 0:
@@ -146,13 +156,17 @@ def drawSearchBars(canvas, data):
     outline = "green2", width = 4)
 
 def drawTypePriceButtons(canvas, data):
-    canvas.create_rectangle(data.width/2 - 100, 70, data.width/2, 90, fill = "maroon1")
+    canvas.create_rectangle(data.width/2 - 100, 70, data.width/2, 90, 
+    fill = "maroon1")
     canvas.create_text(data.width/2 - 50, 80, text = "Close")
-    canvas.create_rectangle(data.width/2 - 200, 70, data.width/2 - 100, 90, fill = "purple1")
+    canvas.create_rectangle(data.width/2 - 200, 70, data.width/2 - 100, 90, 
+    fill = "purple1")
     canvas.create_text(data.width/2 - 150, 80, text = "Open")
-    canvas.create_rectangle(data.width/2, 70, data.width/2 + 100, 90, fill = "maroon1")
+    canvas.create_rectangle(data.width/2, 70, data.width/2 + 100, 90, 
+    fill = "maroon1")
     canvas.create_text(data.width/2 + 50, 80, text = "High")
-    canvas.create_rectangle(data.width/2 + 100, 70, data.width/2 + 200, 90, fill = "purple1")
+    canvas.create_rectangle(data.width/2 + 100, 70, data.width/2 + 200, 90, 
+    fill = "purple1")
     canvas.create_text(data.width/2 + 150, 80, text = "Low")
     
 def drawUserInput(canvas, data):
