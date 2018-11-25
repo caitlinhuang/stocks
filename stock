@@ -6,6 +6,7 @@ import requests
 import json
 from webScraper import *
 import time
+import datetime as DT
 import datetime
 import numpy as np
 #import matplotlib.finance
@@ -28,11 +29,34 @@ from newsPreProcess import newsPreProcess
 #tk_canvas_sgskip.html and the 15112 website
 
 class Stock(object):
-    def __init__(self, symbol, date):
-        self.date = date
+    def __init__(self, symbol, startDate, endDate):
+        #self.endDate = endDate
+        #self.startDate = startDate
         self.symbol = symbol
         self.company = None
         self.graph = None
+
+        '''
+        today = DT.date.today()
+        startDay = today - DT.timedelta(days=7)
+        if(data.timeFrameStatus == data.timeFrames[0]):
+            startDay = today - DT.timedelta(days=7)
+        elif(data.timeFrameStatus == data.timeFrames[1]):
+            startDay = today - DT.timedelta(days=30)
+        elif (data.timeFrameStatus == data.timeFrames[2]):
+            startDay = today - DT.timedelta(days=180)
+        elif (data.timeFrameStatus == data.timeFrames[3]):
+            startDay = today - DT.timedelta(days=360)
+        elif (data.timeFrameStatus == data.timeFrames[4]):
+            startDay = today - DT.timedelta(days=1800)
+        elif (data.timeFrameStatus == data.timeFrames[5]):
+            startDay = today - DT.timedelta(days=18000)
+        '''
+        today = endDate.split('-')
+        self.endTime = today[0] + today[1] + today[2]
+        sDate = startDate.split('-')
+        self.startTime = sDate[0] + sDate[1] + sDate[2]
+        
 
     def setCompany(self):
         uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
@@ -65,7 +89,7 @@ class Stock(object):
         uncleanedDate = str(datetime.datetime.now())
         lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/"+ self.symbol, 
-        trim_start = self.date, trim_end = lstDate[0], authtoken=auth_tok)
+        trim_start = self.startTime, trim_end = lstDate[0], authtoken=auth_tok)
         return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
@@ -109,7 +133,22 @@ class Stock(object):
         canvas.create_text((loc[0]+380, loc[1]+480), text="News Relevance = "+ str(rScore))
 
     def getStockNewsData(self):
-        sScore, rScore = newsPreProcess("/Users/caitlinhuang/Desktop/15112/termproject/news/Full-Economic-NewsDFE-839861.csv", self.symbol)
+        companyName = ''
+        if(self.company==None):
+            companyName = self.setCompany()
+        else:
+            companyName = self.company
+        companyNameList = companyName.split(" ")
+        keyWord01 = ' '+companyNameList[0]+' '
+        if len(companyNameList) > 1:
+            keyWord02 = ' '+companyNameList[1]+' '
+        else:
+            keyWord02 = ' '
+            '''
+        sScore, rScore = newsPreProcess("/Users/caitlinhuang/Desktop/15112/termproject/news/Full-Economic-NewsDFE-839861.csv",
+                                        keyWord01, keyWord02, self.startTime, self.endTime)
+                                        '''
+        sScore, rScore = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv", keyWord01, keyWord02, self.startTime, self.endTime)
         return sScore, rScore
 
     def __eq__(self,other):
