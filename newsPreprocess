@@ -1,0 +1,51 @@
+import pandas as pd
+import numpy as np
+import os
+import json
+
+def isFloat(value):
+    import math
+    try:
+        x = float(value)
+        if math.isnan(x): return False
+        else: return True
+    except ValueError:
+        return False
+
+def newsPreProcess(file, ticker):
+    df = pd.read_csv(file,encoding='latin-1')
+    df['mentioned'] = ''
+    #pd.set_option('display.max_rows', len(df))
+    #pd.set_option('display.max_columns', 16)
+    #return list(df)
+
+    sentimentScore = 0
+    relevanceScore = 0
+    sCount = 0
+    rCount = 0
+    
+    for i in range(len(df.index)):
+        #print(df.iloc[[i], :])
+        #print("i = ",i)
+        text = df.iloc[[i], :].get('text').values[0]
+        if " Apple " in text:
+            sentiment = df.iloc[[i], :].get('positivity').values[0]
+            sentimentConf = df.iloc[[i], :].get('positivity:confidence').values[0]
+            #print("sentiment =", sentiment)
+            relevance = df.iloc[[i], :].get('relevance').values[0]
+            relevanceConf = df.iloc[[i], :].get('relevance:confidence').values[0]
+            #print("relevance =", relevance)
+            if(isFloat(sentiment) and isFloat(sentimentConf)):
+                sentimentScore += float(sentiment)*float(sentimentConf)
+                sCount += 1
+            if relevance == 'no': relevance = 0
+            if relevance == 'yes':relevance = 1  
+            if(isFloat(relevanceConf)):
+                relevanceScore += float(relevance)*float(relevanceConf)
+                rCount += 1
+            #print(text)
+    print("sentimentScore =", sentimentScore/sCount)
+    print("relevanceScore =", relevanceScore/rCount)
+    sScore = sentimentScore/sCount
+    rScore = relevanceScore/rCount
+    return sScore, rScore
