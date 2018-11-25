@@ -23,7 +23,9 @@ import dateutil.relativedelta
 def init(data):
     data.stockSym = ""
     data.now = datetime.datetime.now()
-    data.startDate = ""
+    endDateUncleaned = str(data.now)
+    data.endDate = endDateUncleaned[:10]
+    data.startDate = '1980-01-01'
     data.clickStockEntry = False
     data.clickOpen = False
     data.clickClose = False
@@ -105,9 +107,12 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        data.stock = Stock(data.stockSym, data.startDate)
+        print("stock = ", data.stockSym)
+        print("startDate = ", data.startDate)
+        data.stock = Stock(data.stockSym, data.startDate, data.endDate)
         data.stock.setCompany()
-    except:
+    except Exception as e:
+        print("Exception:", str(e))
         invalidStockSym(data)
         
 def invalidStockSym(data):
