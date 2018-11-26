@@ -34,7 +34,8 @@ def init(data):
     data.clickMax = False
     #data.typesPrice = [data.clickOpen, data.clickClose, data.clickHigh, data.clickLow]
     data.timeFrameStatus = "1 Week"
-    data.timeFrames = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", "Max", "30 Day Prediction"]
+    data.timeFrames = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years",
+    "Max", "30 Day Prediction"]
     data.retrieving = False
     data.graphAvailable = False
     data.stock = None
@@ -77,8 +78,10 @@ def mousePressedZoom(event, data):
                 data.startDate = str(currYear - 1) + uncleanedNow[4: 10]
             else:
                 data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
-        else:
+        elif data.timeFrameStatus == "Max":
             data.startDate = "1980-01-01"
+        else:
+            data.startDate = data.endDate
         isValidStockSym(data)
             
 def mousePressed(event, data):
@@ -107,8 +110,6 @@ def keyPressed(event, data):
         
 def isValidStockSym(data):
     try:
-        print("stock = ", data.stockSym)
-        print("startDate = ", data.startDate)
         data.stock = Stock(data.stockSym, data.startDate, data.endDate)
         data.stock.setCompany()
     except Exception as e:
@@ -133,8 +134,8 @@ def redrawAll(canvas, data):
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
         data.stock.drawStockNewsFigure(canvas)
-        if data.mouseOnGraph == True:
-            data.stock.drawPrices(canvas, data.figX, data.figY)
+        #if data.mouseOnGraph == True:
+            #data.stock.drawPrices(canvas, data.figX, data.figY)
     
 def drawZoomButtons(canvas, data):
     xStartButtons = 50
