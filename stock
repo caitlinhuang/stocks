@@ -2,60 +2,31 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.backends.tkagg as tkagg
 from matplotlib.backends.backend_tkagg import FigureCanvasAgg
-import requests
-import json
 from webScraper import *
 import time
-import datetime as DT
 import datetime
 import numpy as np
-#import matplotlib.finance
-#import mpl_finance
 from matplotlib.figure import Figure
 import matplotlib.pyplot
 from tkinter import *
-import matplotlib as mpl
-import matplotlib.ticker as mticker
-import matplotlib.dates as mdates
-import tkinter.messagebox
-import tkinter.simpledialog
-#from PIL import Image, ImageTk
-import os
 import string
 import quandl
 from newsPreProcess import newsPreProcess
+import linearPrediction
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
 #tk_canvas_sgskip.html and the 15112 website
 
 class Stock(object):
     def __init__(self, symbol, startDate, endDate):
-        #self.endDate = endDate
-        #self.startDate = startDate
         self.symbol = symbol
         self.company = None
         self.graph = None
-
-        '''
-        today = DT.date.today()
-        startDay = today - DT.timedelta(days=7)
-        if(data.timeFrameStatus == data.timeFrames[0]):
-            startDay = today - DT.timedelta(days=7)
-        elif(data.timeFrameStatus == data.timeFrames[1]):
-            startDay = today - DT.timedelta(days=30)
-        elif (data.timeFrameStatus == data.timeFrames[2]):
-            startDay = today - DT.timedelta(days=180)
-        elif (data.timeFrameStatus == data.timeFrames[3]):
-            startDay = today - DT.timedelta(days=360)
-        elif (data.timeFrameStatus == data.timeFrames[4]):
-            startDay = today - DT.timedelta(days=1800)
-        elif (data.timeFrameStatus == data.timeFrames[5]):
-            startDay = today - DT.timedelta(days=18000)
-        '''
         today = endDate.split('-')
         self.endTime = today[0] + today[1] + today[2]
         sDate = startDate.split('-')
         self.startTime = sDate[0] + sDate[1] + sDate[2]
+        self.price = list()
         
 
     def setCompany(self):
@@ -95,42 +66,83 @@ class Stock(object):
     def drawStockGraph(self):
         while self.company == None:
             time.sleep(0.001)
-        price = self.getPrices('Adj_Close')
-        chart = matplotlib.pyplot.figure(facecolor = "blue", figsize = (6, 4), dpi = 90)
+        chart = matplotlib.pyplot.figure(facecolor = "blue",
+        figsize = (6, 4), dpi = 90)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
-        graph.plot(price, label = "Close Price", linestyle = '-')
+        if self.startTime == self.endTime:
+            forecast = linearPrediction.forecast30Days(self.symbol)
+            graph.plot(forecast, label = "Forecasted Closing Prices",
+            linestyle = "-")
+            
+        else:
+            self.price = self.getPrices('Adj_Close')
+            graph.plot(self.price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
         matplotlib.pyplot.title(self.company, color = "magenta")
         self.low, self.high = graph.get_ylim()
+        #matplotlib.pyplot.connect('motion_notify_event', self.mouseMotion)
         self.figure = chart
         
-    def drawPrices(self, canvas, x, y):
+    """def forecast(self):
+        numPredictionDays = 30
+        pricesTrain = np.array(self.price)
+        pricesTrain = sklearn.preprocessing.scale(pricesToPredict)
+        forecast = np.array([0] * 30)
+        classifier = LinearRegression()
+        #I don't know what to do about the fit part since we are not predicting something that already happened. 
+        classifier.fit(pricesTrain, 
+        confidence = classifier.score(pricesTest, 
+        predictions = classifier.predict(pricesTest)
+        return predictions"""
+
+    """def mouseMotion(self, event):
+        date = event.xdata
+        price = event.ydata
+        return date, price"""
+        
+    """def drawPrices(self, canvas, x, y):
         highPixel = 183
         lowPixel = 499
         yChange = abs(y - lowPixel)
         difference = abs(self.high - self.low)
         proportionGraph = difference/(lowPixel - highPixel)
         priceDisplay = proportionGraph * yChange
-        canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10, outline = "gold")
-        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
+        canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
+        outline = "gold")
+        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))"""
 
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         canvas.create_rectangle(loc[0], loc[1] + 400,
         loc[0] + 250, loc[1] + 525)
         canvas.create_text((loc[0] + 100, loc[1] + 420),
         text = "Stock Statistics Analysis Data")
+        fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
+        canvas.create_text((loc[0] + 110, loc[1] + 450),
+        text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)))
+        canvas.create_text((loc[0] + 110, loc[1] + 480),
+        text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)))
         
     def getStockAnalysisData(self):
         pass
 
+    def get50And200DayMovingAvg(self):
+        last50 = np.array(self.price[:-50])
+        fiftyMoveAvg = np.mean(last50)
+        last200 = np.array(self.price[:-200])
+        twoHundredMoveAvg = np.mean(last200)
+        return fiftyMoveAvg, twoHundredMoveAvg
+        
     def drawStockNewsFigure(self, canvas, loc=(50, 140)):
-        canvas.create_rectangle(loc[0]+300, loc[1]+400, loc[0]+600, loc[1]+525)
-        canvas.create_text((loc[0]+380, loc[1]+420), text="News Summary")
+        canvas.create_rectangle(loc[0] + 300, loc[1] + 400, loc[0] + 600,
+        loc[1] + 525)
+        canvas.create_text((loc[0] + 380, loc[1] + 420), text="News Summary")
         sScore, rScore = self.getStockNewsData()
-        canvas.create_text((loc[0]+380, loc[1]+450), text="News Sentiment = "+ str(sScore))
-        canvas.create_text((loc[0]+380, loc[1]+480), text="News Relevance = "+ str(rScore))
+        canvas.create_text((loc[0] + 380, loc[1] + 450),
+        text="News Sentiment = "+ str(sScore))
+        canvas.create_text((loc[0] + 380, loc[1] + 480),
+        text="News Relevance = "+ str(rScore))
 
     def getStockNewsData(self):
         companyName = ''
@@ -144,12 +156,12 @@ class Stock(object):
             keyWord02 = ' '+companyNameList[1]+' '
         else:
             keyWord02 = ' '
-            '''
-        sScore, rScore = newsPreProcess("/Users/caitlinhuang/Desktop/15112/termproject/news/Full-Economic-NewsDFE-839861.csv",
-                                        keyWord01, keyWord02, self.startTime, self.endTime)
-                                        '''
-        sScore, rScore = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv", keyWord01, keyWord02, self.startTime, self.endTime)
+        sScore, rScore = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
+        keyWord01, keyWord02, self.startTime, self.endTime)
         return sScore, rScore
 
     def __eq__(self,other):
         return isinstance(other,Stock) and self.symbol==other.symbol
+        
+    """def __hash__(self):
+        hash((self.symbol))"""
