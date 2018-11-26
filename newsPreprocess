@@ -1,10 +1,10 @@
+import math
 import pandas as pd
 import numpy as np
 import os
 import json
 
 def isFloat(value):
-    import math
     try:
         x = float(value)
         if math.isnan(x): return False
@@ -29,31 +29,20 @@ def convertDate(dateBeforeClean):
 def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
     df = pd.read_csv(file,encoding='latin-1')
     df['mentioned'] = ''
-    #pd.set_option('display.max_rows', len(df))
-    #pd.set_option('display.max_columns', 16)
-    #return list(df)
-
     sentimentScore = 0
     relevanceScore = 0
     sCount = 0
     rCount = 0
-    
     for i in range(len(df.index)):
-        #print(df.iloc[[i], :])
-        #print("i = ",i)
         text = df.iloc[[i], :].get('text').values[0]
         dateBeforeClean = df.iloc[[i], :].get('date').values[0]
         date = int(convertDate(dateBeforeClean))
-        #print("date = ", date)
-        #print("keyWord01 =", keyWord01)
-        #print("keyWord02 =", keyWord02)
-        if (keyWord01 in text or keyWord02 in text) and (date >= int(startDate) and date <= int(endDate)):
+        if (keyWord01 in text or keyWord02 in text) and \
+        (date >= int(startDate) and date <= int(endDate)):
             sentiment = df.iloc[[i], :].get('positivity').values[0]
             sentimentConf = df.iloc[[i], :].get('positivity:confidence').values[0]
-            #print("sentiment =", sentiment)
             relevance = df.iloc[[i], :].get('relevance').values[0]
             relevanceConf = df.iloc[[i], :].get('relevance:confidence').values[0]
-            #print("relevance =", relevance)
             if(isFloat(sentiment) and isFloat(sentimentConf)):
                 sentimentScore += float(sentiment)*float(sentimentConf)
                 sCount += 1
@@ -62,15 +51,8 @@ def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
             if(isFloat(relevanceConf)):
                 relevanceScore += float(relevance)*float(relevanceConf)
                 rCount += 1
-            #print(text)
-    #print("sentimentScore =", sentimentScore/sCount)
-    #print("relevanceScore =", relevanceScore/rCount)
-    if(sCount != 0):
-        sScore = format(sentimentScore/sCount,".2f")
-    else:
-        sScore = 0
-    if(rCount != 0):
-        rScore = format(relevanceScore/rCount,".2f")
-    else:
-        rScore = 0
+    if(sCount != 0): sScore = format(sentimentScore/sCount,".2f")
+    else: sScore = 0
+    if(rCount != 0): rScore = format(relevanceScore/rCount,".2f")
+    else: rScore = 0
     return sScore, rScore
