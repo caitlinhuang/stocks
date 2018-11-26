@@ -1,0 +1,45 @@
+from datetime import datetime, timedelta
+import numpy as np
+import pandas as pd
+import quandl
+import sklearn
+from sklearn.linear_model import LinearRegression
+from sklearn import preprocessing, svm
+
+def forecast30Days(symbol):
+    auth_tok = "c2V_sVydLtbotC8xN8sH"
+    today = datetime.now()
+    today = str(today)[:10]
+    eightYearsAgo = str(int(today[:4]) - 8) + today[4:10]
+    dataStocks = quandl.get("EOD/" + symbol, trim_start = eightYearsAgo,
+    trim_end = today, authtoken=auth_tok)#, returns = 'numpy')
+    dataStocks = dataStocks[['Adj_Close']]
+    predictionDays = 30 # predicting 30 days into future
+    #label column with data shifted 30 units up to make a space for the data
+    dataStocks['Prediction'] = dataStocks[['Adj_Close']].shift(-predictionDays) 
+    print(dataStocks['Prediction'])
+    X = np.array(dataStocks.drop(['Prediction'], 1))
+    X = preprocessing.scale(X)
+    priceForecast = X[-predictionDays:] # set X_forecast equal to last 30
+    X = X[:-predictionDays] # remove last 30 from X
+    y = np.array(dataStocks['Prediction'])
+    y = y[:-predictionDays]
+
+    X_train, X_test, y_train, y_test = sklearn.cross_validation.train_test_split(X, y,
+    test_size = 0.2)
+
+    # Training
+    clf = LinearRegression()
+    clf.fit(X_train,y_train)
+    # Testing
+    confidence = clf.score(X_test, y_test)
+    print("confidence: ", confidence)
+
+    predictions = clf.predict(priceForecast)
+    print(predictions)
+    todayExact = datetime.now()
+    days = pd.date_range(todayExact, todayExact + timedelta(29), freq='D')
+    forecastPrices = pd.DataFrame({'date': days, 'Price': predictions})
+    forecastPrices = forecastPrices.set_index('date')
+    print(forecastPrices)
+    return forecastPrices
