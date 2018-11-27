@@ -16,7 +16,7 @@ def convertDate(dateBeforeClean):
     year = dateBeforeClean.split('/')[2]
     month = dateBeforeClean.split('/')[1]
     day = dateBeforeClean.split('/')[0]
-    if len(year) == 2 and int(year) < 40 :
+    if len(year) == 2 and int(year) < 40:
         year = '20'+year
     else:
         year = '19'+year
@@ -29,10 +29,9 @@ def convertDate(dateBeforeClean):
 def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
     df = pd.read_csv(file,encoding='latin-1')
     df['mentioned'] = ''
-    sentimentScore = 0
-    relevanceScore = 0
-    sCount = 0
-    rCount = 0
+    (sentimentScore, relevanceScore, newsTitlesCount)  = (0, 0, 0)
+    newsTitles = list()
+    (sCount, rCount) = (0, 0)
     for i in range(len(df.index)):
         text = df.iloc[[i], :].get('text').values[0]
         dateBeforeClean = df.iloc[[i], :].get('date').values[0]
@@ -40,19 +39,20 @@ def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
         if (keyWord01 in text or keyWord02 in text) and \
         (date >= int(startDate) and date <= int(endDate)):
             sentiment = df.iloc[[i], :].get('positivity').values[0]
-            sentimentConf = df.iloc[[i], :].get('positivity:confidence').values[0]
             relevance = df.iloc[[i], :].get('relevance').values[0]
-            relevanceConf = df.iloc[[i], :].get('relevance:confidence').values[0]
-            if(isFloat(sentiment) and isFloat(sentimentConf)):
-                sentimentScore += float(sentiment)*float(sentimentConf)
+            if(isFloat(sentiment)):
+                sentimentScore = float(sentiment) + sentimentScore
                 sCount += 1
             if relevance == 'no': relevance = 0
-            else: relevance = 1  
-            if(isFloat(relevanceConf)):
-                relevanceScore += float(relevance)*float(relevanceConf)
-                rCount += 1
+            else:
+                relevance = 1
+                if (newsTitlesCount < 3):
+                    newsTitles.append(df.iloc[[i], :].get('headline').values[0])
+                    newsTitlesCount += 1
+            relevanceScore = float(relevance) + relevanceScore
+            rCount += 1
     if(sCount != 0): sScore = format(sentimentScore/sCount,".2f")
     else: sScore = 0
     if(rCount != 0): rScore = format(relevanceScore/rCount,".2f")
     else: rScore = 0
-    return sScore, rScore
+    return sScore, rScore, newsTitles
