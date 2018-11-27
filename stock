@@ -13,9 +13,11 @@ import string
 import quandl
 from newsPreProcess import newsPreProcess
 import linearPrediction
+import math
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
-#tk_canvas_sgskip.html and the 15112 website
+#tk_canvas_sgskip.html, lib/matplotlib/backends/backend_tkagg.py,
+# and the 15112 website
 
 class Stock(object):
     def __init__(self, symbol, startDate, endDate):
@@ -38,9 +40,8 @@ class Stock(object):
         self.company = name
 
     def drawStockFigure(self, canvas, loc=(50,140)):
-        #Draw a matplotlib figure onto a Tk canvas
-        #loc: location of top-left corner of figure on canvas in pixels.
-        #Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
+        #draws a matplotlib graph on the tkinter canvas
+        #location of top-left corner of figure on canvas in pixels.
         self.chart = FigureCanvasAgg(self.figure)
         self.chart.draw()
         (self.chartX, self.chartY, self.chartWidth, 
@@ -85,24 +86,12 @@ class Stock(object):
         #matplotlib.pyplot.connect('motion_notify_event', self.mouseMotion)
         self.figure = chart
         
-    """def forecast(self):
-        numPredictionDays = 30
-        pricesTrain = np.array(self.price)
-        pricesTrain = sklearn.preprocessing.scale(pricesToPredict)
-        forecast = np.array([0] * 30)
-        classifier = LinearRegression()
-        #I don't know what to do about the fit part since we are not predicting something that already happened. 
-        classifier.fit(pricesTrain, 
-        confidence = classifier.score(pricesTest, 
-        predictions = classifier.predict(pricesTest)
-        return predictions"""
-
     """def mouseMotion(self, event):
         date = event.xdata
         price = event.ydata
         return date, price"""
         
-    """def drawPrices(self, canvas, x, y):
+    def drawPrices(self, canvas, x, y):
         highPixel = 183
         lowPixel = 499
         yChange = abs(y - lowPixel)
@@ -111,18 +100,23 @@ class Stock(object):
         priceDisplay = proportionGraph * yChange
         canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
         outline = "gold")
-        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))"""
+        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
 
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         canvas.create_rectangle(loc[0], loc[1] + 400,
         loc[0] + 250, loc[1] + 525)
-        canvas.create_text((loc[0] + 100, loc[1] + 420),
-        text = "Stock Statistics Analysis Data")
+        canvas.create_text((loc[0] + 10, loc[1] + 420),
+        text = "Stock Statistics Analysis Data", anchor = W)
         fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
-        canvas.create_text((loc[0] + 110, loc[1] + 450),
-        text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)))
-        canvas.create_text((loc[0] + 110, loc[1] + 480),
-        text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)))
+        canvas.create_text((loc[0] + 10, loc[1] + 450),
+        text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)),
+        anchor = W)
+        canvas.create_text((loc[0] + 10, loc[1] + 480),
+        text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)),
+        anchor = W)
+        volatility = self.getVolatility()
+        canvas.create_text((loc[0] + 10, loc[1] + 510),
+        text = "Volatility: " + str(round(volatility, 3)), anchor = W)
         
     def getStockAnalysisData(self):
         pass
@@ -134,15 +128,49 @@ class Stock(object):
         twoHundredMoveAvg = np.mean(last200)
         return fiftyMoveAvg, twoHundredMoveAvg
         
+        #calculates the volatility for the stock prices
+    def getVolatility(self):
+        volatility = list()
+        avgTradingDaysInYear = 252
+        for i in range(avgTradingDaysInYear):
+            volatility.append(math.log(self.price[-(avgTradingDaysInYear - \
+            i)]/self.price[-(avgTradingDaysInYear - i + 1)]))
+        meanReturn = self.mean(volatility)
+        deviations = list()
+        for i in range(avgTradingDaysInYear):
+            deviations.append(volatility[i] - meanReturn)
+        #finding the variance
+        squaresOfDeviations = list()
+        for i in range(avgTradingDaysInYear):
+            squaresOfDeviations.append(deviations[i]**2)
+        sqDeviationsTotal = sum(squaresOfDeviations)
+        variance = sqDeviationsTotal/(len(squaresOfDeviations) - 1)
+        #volality is the square root of the variance
+        return math.sqrt(variance)
+        
+    def mean(self, lst):
+        count = 0
+        total = 0
+        for item in lst:
+            total += item
+            count += 1
+        return total/count
+        
     def drawStockNewsFigure(self, canvas, loc=(50, 140)):
-        canvas.create_rectangle(loc[0] + 300, loc[1] + 400, loc[0] + 600,
+        canvas.create_rectangle(loc[0] + 300, loc[1] + 400, loc[0] + 700,
         loc[1] + 525)
-        canvas.create_text((loc[0] + 380, loc[1] + 420), text="News Summary")
-        sScore, rScore = self.getStockNewsData()
-        canvas.create_text((loc[0] + 380, loc[1] + 450),
-        text="News Sentiment = "+ str(sScore))
-        canvas.create_text((loc[0] + 380, loc[1] + 480),
-        text="News Relevance = "+ str(rScore))
+        canvas.create_text((loc[0] + 310, loc[1] + 420),
+        text="NEWS SUMMARY :", anchor = W)
+        sScore, rScore, newsTitles = self.getStockNewsData()
+        canvas.create_text((loc[0] + 430, loc[1] + 420),
+        text="Sentiment = "+ str(sScore), anchor = W)
+        canvas.create_text((loc[0] + 530, loc[1] + 420),
+        text="Relevance = "+ str(rScore), anchor = W)
+        canvas.create_text((loc[0] + 310, loc[1] + 440),
+        text="TOP NEWS TITLE :", anchor = W)
+        for i in range(0, len(newsTitles)) :
+            canvas.create_text((loc[0] + 310,
+            loc[1] + 465 + i*23), text=newsTitles[i], anchor = W, width = 380)
 
     def getStockNewsData(self):
         companyName = ''
@@ -153,12 +181,13 @@ class Stock(object):
         companyNameList = companyName.split(" ")
         keyWord01 = ' '+companyNameList[0]+' '
         if len(companyNameList) > 1:
-            keyWord02 = ' '+companyNameList[1]+' '
+            keyWord02 = ' '+companyNameList[0]+ ' ' + companyNameList[1]+' '
         else:
             keyWord02 = ' '
-        sScore, rScore = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
+        (sScore, rScore,
+        newsTitles) = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
         keyWord01, keyWord02, self.startTime, self.endTime)
-        return sScore, rScore
+        return sScore, rScore, newsTitles
 
     def __eq__(self,other):
         return isinstance(other,Stock) and self.symbol==other.symbol
