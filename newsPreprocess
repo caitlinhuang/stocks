@@ -30,7 +30,7 @@ def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
     df = pd.read_csv(file,encoding='latin-1')
     df['mentioned'] = ''
     (sentimentScore, relevanceScore, newsTitlesCount)  = (0, 0, 0)
-    newsTitles = list()
+    newsTitles, stories = list(), list()
     (sCount, rCount) = (0, 0)
     for i in range(len(df.index)):
         text = df.iloc[[i], :].get('text').values[0]
@@ -49,10 +49,11 @@ def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
                 if (newsTitlesCount < 3):
                     newsTitles.append(df.iloc[[i], :].get('headline').values[0])
                     newsTitlesCount += 1
+                    stories.append(df.iloc[[i], :].get("text").values[0])
             relevanceScore = float(relevance) + relevanceScore
             rCount += 1
     if(sCount != 0): sScore = format(sentimentScore/sCount,".2f")
     else: sScore = 0
     if(rCount != 0): rScore = format(relevanceScore/rCount,".2f")
     else: rScore = 0
-    return sScore, rScore, newsTitles
+    return sScore, rScore, newsTitles, stories
