@@ -27,12 +27,6 @@ def init(data):
     data.endDate = endDateUncleaned[:10]
     data.startDate = '1980-01-01'
     data.clickStockEntry = False
-    data.clickOpen = False
-    data.clickClose = False
-    data.clickHigh = False
-    data.clickLow = False
-    data.clickMax = False
-    #data.typesPrice = [data.clickOpen, data.clickClose, data.clickHigh, data.clickLow]
     data.timeFrameStatus = "1 Week"
     data.timeFrames = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years",
     "Max", "30 Day Prediction"]
@@ -54,35 +48,36 @@ def mousePressedZoom(event, data):
     event.x < xStartButtons + (numButtons * buttonWidth) and \
     event.y > yStartButtons and event.y < yStartButtons + buttonHeight:
         data.clickStockEntry = False
-        #data.clickDateEntry = False
         indexZoomClick = (event.x - xStartButtons)//buttonWidth
         data.timeFrameStatus = data.timeFrames[indexZoomClick]
-        if data.timeFrameStatus == "1 Week":
-            startDateUncleaned = str(data.now - datetime.timedelta(days = 7))
-            data.startDate = startDateUncleaned[:10]
-        elif data.timeFrameStatus == "1 Month":
-            data.startDate = data.now - \
-            dateutil.relativedelta.relativedelta(months = 1)
-            data.startDate = str(data.startDate)
-            data.startDate = data.startDate[:10]
-        elif data.timeFrameStatus == "6 Months":
-            data.startDate = data.now - \
-            dateutil.relativedelta.relativedelta(months = 6)
-            data.startDate = str(data.startDate)
-            data.startDate = data.startDate[:10]
-        elif data.timeFrameStatus == "1 Year" or \
-        data.timeFrameStatus == "5 Years":
-            uncleanedNow = str(data.now)
-            currYear = int(uncleanedNow[:4])
-            if data.timeFrameStatus == "1 Year":
-                data.startDate = str(currYear - 1) + uncleanedNow[4: 10]
-            else:
-                data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
-        elif data.timeFrameStatus == "Max":
-            data.startDate = "1980-01-01"
-        else:
-            data.startDate = data.endDate
+        setDates(data)
         isValidStockSym(data)
+        
+def setDates(data):
+    if data.timeFrameStatus == "1 Week":
+        startDateUncleaned = str(data.now - datetime.timedelta(days = 7))
+        data.startDate = startDateUncleaned[:10]
+    elif data.timeFrameStatus == "1 Month":
+        data.startDate = data.now - \
+        dateutil.relativedelta.relativedelta(months = 1)
+        data.startDate = str(data.startDate)
+        data.startDate = data.startDate[:10]
+    elif data.timeFrameStatus == "6 Months":
+        data.startDate = data.now - \
+        dateutil.relativedelta.relativedelta(months = 6)
+        data.startDate = str(data.startDate)
+        data.startDate = data.startDate[:10]
+    elif data.timeFrameStatus == "1 Year" or data.timeFrameStatus == "5 Years":
+        uncleanedNow = str(data.now)
+        currYear = int(uncleanedNow[:4])
+        if data.timeFrameStatus == "1 Year":
+            data.startDate = str(currYear - 1) + uncleanedNow[4: 10]
+        else:
+            data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
+    elif data.timeFrameStatus == "Max":
+        data.startDate = "1980-01-01"
+    else:
+        data.startDate = data.endDate
             
 def mousePressed(event, data):
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
@@ -107,7 +102,9 @@ def keyPressed(event, data):
         elif event.keysym == "Return":
             data.retrieving = True
             isValidStockSym(data)
-        
+            
+#tries to make a Stock object. If the user typed something 
+#that is invalid, there is a warning message
 def isValidStockSym(data):
     try:
         data.stock = Stock(data.stockSym, data.startDate, data.endDate)
@@ -115,14 +112,14 @@ def isValidStockSym(data):
     except Exception as e:
         print("Exception:", str(e))
         invalidStockSym(data)
+
+def timerFired(data):
+    pass
         
 def invalidStockSym(data):
     #global canvas
     tkinter.messagebox.showwarning("Warning", 
     "The Stock Symbol is invalid! Please try again.")
-
-def timerFired(data):
-    pass
 
 def redrawAll(canvas, data):
     drawSearchBars(canvas, data)
@@ -134,6 +131,7 @@ def redrawAll(canvas, data):
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
         data.stock.drawStockNewsFigure(canvas)
+        data.stock.drawNewsHeaders(canvas)
         #if data.mouseOnGraph == True:
             #data.stock.drawPrices(canvas, data.figX, data.figY)
     
@@ -160,25 +158,11 @@ def drawSearchBars(canvas, data):
     text = "Enter a stock ticker symbol")
     canvas.create_rectangle(data.width/2 - 100, 40, data.width/2 + 100, 60, 
     outline = "green2", width = 4)
-
-def drawTypePriceButtons(canvas, data):
-    canvas.create_rectangle(data.width/2 - 100, 70, data.width/2, 90, 
-    fill = "maroon1")
-    canvas.create_text(data.width/2 - 50, 80, text = "Close")
-    canvas.create_rectangle(data.width/2 - 200, 70, data.width/2 - 100, 90, 
-    fill = "purple1")
-    canvas.create_text(data.width/2 - 150, 80, text = "Open")
-    canvas.create_rectangle(data.width/2, 70, data.width/2 + 100, 90, 
-    fill = "maroon1")
-    canvas.create_text(data.width/2 + 50, 80, text = "High")
-    canvas.create_rectangle(data.width/2 + 100, 70, data.width/2 + 200, 90, 
-    fill = "purple1")
-    canvas.create_text(data.width/2 + 150, 80, text = "Low")
     
 def drawUserInput(canvas, data):
     canvas.create_text(data.width/2, 50, text = data.stockSym)
-    #canvas.create_text(data.width/2, 80, text = data.date)
 
+# I added mouseMovement
 ####################################
 # use the run function as-is
 ####################################
@@ -186,6 +170,8 @@ def drawUserInput(canvas, data):
 def run(width=300, height=300):
     def redrawAllWrapper(canvas, data):
         canvas.delete(ALL)
+        #deal with this part. tkinter documentation. 
+        #canvas.delete() add or delete certain tags.
         #canvas.create_rectangle(0, 0, data.width, data.height,
                                 #fill='white', width=0)
         redrawAll(canvas, data)
@@ -233,4 +219,4 @@ def run(width=300, height=300):
     root.mainloop()  # blocks until window is closed
     print("bye!")
 
-run(800, 700)
+run(850, 700)
