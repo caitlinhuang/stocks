@@ -1,3 +1,7 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.backends.tkagg as tkagg
@@ -32,6 +36,8 @@ class Stock(object):
         sDate = startDate.split('-')
         self.startTime = sDate[0] + sDate[1] + sDate[2]
         self.price = list()
+        #(sScore, rScore, newsTitles, 
+        #self.stories) = self.getStockNewsData()
 
     def setCompany(self):
         uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
@@ -63,10 +69,11 @@ class Stock(object):
         uncleanedDate = str(datetime.datetime.now())
         lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/" + self.symbol,
-            authtoken = auth_tok, collapse = "quarterly")
+            authtoken = auth_tok, collapse = "annually")
         if self.startTime == "19800101":
-            stockRawData = quandl.get("EOD/" + self.symbol,
-            authtoken = auth_tok, collapse = "quarterly")
+            pass
+            """stockRawData = quandl.get("EOD/" + self.symbol,
+            authtoken = auth_tok, collapse = "annually")"""
         elif int(self.endTime[:4]) - int(self.startTime[:4]) == 5:
             stockRawData = quandl.get("EOD/" + self.symbol,
             trim_start = self.startTime, trim_end = lstDate[0],
@@ -78,8 +85,8 @@ class Stock(object):
         return stockRawData.get(fieldName)
 
     def drawStockGraph(self):
-        while self.company == None:
-            time.sleep(0.001)
+        """while self.company == None:
+            time.sleep(0.001)"""
         chart = matplotlib.pyplot.figure(facecolor = "green",
         figsize = (6, 4), dpi = 90)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
@@ -115,20 +122,20 @@ class Stock(object):
         canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
 
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
-        canvas.create_rectangle(loc[0], loc[1] + 390,
+        canvas.create_rectangle(loc[0], loc[1] + 385,
         loc[0] + 250, loc[1] + 525, outline = "DarkOrchid3",
         fill = "white", width = 4)
-        canvas.create_text((loc[0] + 10, loc[1] + 410),
+        canvas.create_text((loc[0] + 10, loc[1] + 405),
         text = "Stock Statistics Analysis Data", anchor = W)
         fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
-        canvas.create_text((loc[0] + 10, loc[1] + 440),
+        canvas.create_text((loc[0] + 10, loc[1] + 435),
         text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)),
         anchor = W)
-        canvas.create_text((loc[0] + 10, loc[1] + 470),
+        canvas.create_text((loc[0] + 10, loc[1] + 465),
         text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)),
         anchor = W)
         volatility = self.getVolatility()
-        canvas.create_text((loc[0] + 10, loc[1] + 500),
+        canvas.create_text((loc[0] + 10, loc[1] + 495),
         text = "Volatility: " + str(round(volatility, 3)), anchor = W)
         
     def getStockAnalysisData(self):
@@ -183,22 +190,24 @@ class Stock(object):
         return total/count
         
     def drawStockNewsFigure(self, canvas, locStats=(50, 140)):
-        canvas.create_rectangle(locStats[0] + 300, locStats[1] + 390,
+        canvas.create_rectangle(locStats[0] + 300, locStats[1] + 385,
         locStats[0] + 700, locStats[1] + 525, outline = "DarkOrchid3",
         fill = "white", width = 4)
-        canvas.create_text((locStats[0] + 310, locStats[1] + 410),
+        canvas.create_text((locStats[0] + 310, locStats[1] + 405),
         text = "NEWS SUMMARY:", anchor = W)
-        sScore, rScore, newsTitles = self.getStockNewsData()
-        canvas.create_text((locStats[0] + 430, locStats[1] + 410),
-        text = "Sentiment = "+ str(sScore), anchor = W)
-        canvas.create_text((locStats[0] + 430, locStats[1] + 430),
-        text = "Relevance = "+ str(rScore), anchor = W)
+        sScore, rScore, newsTitles, stories = self.getStockNewsData()
+        canvas.create_text((locStats[0] + 430, locStats[1] + 405),
+        text = "Sentiment = "+ str(float(sScore)/10) + " Relevance = " + str(rScore),
+        anchor = W)
+        canvas.create_text((locStats[0] + 310, locStats[1] + 425),
+        text = "Relevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment. 1 is most relevant and most positive sentiment. ",
+        anchor = W)
         canvas.create_text(locStats[0] + 310, locStats[1] + 450,
         text = "News Titles: ", anchor = W)
         for i in range(len(newsTitles)):
             canvas.create_text((locStats[0] + 310,
             locStats[1] + 410 + ((i + 3) * 20)),
-            text=newsTitles[i], anchor = W)
+            text = newsTitles[i], anchor = W)
 
     def getStockNewsData(self):
         companyName = ''
@@ -212,10 +221,10 @@ class Stock(object):
             keyWord02 = ' '+companyNameList[0]+ ' ' + companyNameList[1]+' '
         else:
             keyWord02 = ' '
-        (sScore, rScore,
-        newsTitles) = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
+        (sScore, rScore, newsTitles,
+        stories) = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
         keyWord01, keyWord02, self.startTime, self.endTime)
-        return sScore, rScore, newsTitles
+        return sScore, rScore, newsTitles, stories
 
     def __eq__(self,other):
         return isinstance(other,Stock) and self.symbol==other.symbol
