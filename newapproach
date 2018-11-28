@@ -2,9 +2,6 @@
 #caitlinh
 #section G
 
-#referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
-#tk_canvas_sgskip.html and the 15112 website
-
 from tkinter import *
 import webScraper
 import tkinter.messagebox
@@ -20,6 +17,7 @@ from stock import *
 # customize these functions
 ####################################
 
+#intializes variables like the stock symbol and date
 def init(data):
     data.stockSym = ""
     data.now = datetime.datetime.now()
@@ -41,7 +39,10 @@ def init(data):
     #photo from https://www.flickr.com/photos/pictures-of-money/16678606754
     data.pig = PhotoImage(file = "pig.png")
     data.pig = data.pig.subsample(2, 2)
-    
+    data.scroll = 0
+    data.scrollAmount = 30
+
+#tracks which time periods the user wants to see
 def mousePressedZoom(event, data):
     data.action = 'yes'
     xStartButtons = 50
@@ -82,16 +83,20 @@ def setDates(data):
             data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
     elif data.timeFrameStatus == "Max":
         data.startDate = "1980-01-01"
-    else:
+    elif data.timeFrameStatus == "30 Day Prediction":
         data.startDate = data.endDate
-            
+
+#general mouse pressed that checks if the user is 
+#in the areas that demand change on the screen            
 def mousePressed(event, data):
     data.action = 'yes'
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
     event.y > 40 and event.y < 60:
         data.clickStockEntry = True
     mousePressedZoom(event, data)
-    
+
+#tracks mouse movements on the graph so that 
+#the stock price can be displayed where the user's mouse is
 def mouseMovement(event, data):
     if event.y > 183 and event.y < 590 and event.x > 107 and event.x < 590:
         data.action = 'yes'
@@ -99,18 +104,24 @@ def mouseMovement(event, data):
         data.figY = event.y
         data.mouseOnGraph = True
 
+#allows the user to type in the stock symbol
 def keyPressed(event, data):
     data.action = 'yes'
     if data.clickStockEntry == True:
         if event.keysym == "BackSpace":
             if len(data.stockSym) > 0:
                 data.stockSym = data.stockSym[: -1]
+        elif event.keysym == "Up":
+            data.scroll -= data.scrollAmount
+        elif event.keysym == "Down":
+            data.scroll += data.scrollAmount
         elif event.keysym != "Return" and event.keysym != "BackSpace" and \
         len(data.stockSym) < 25:
             data.stockSym += event.char
         elif event.keysym == "Return":
             data.retrieving = True
             isValidStockSym(data)
+        
             
 #tries to make a Stock object. If the user typed something 
 #that is invalid, there is a warning message
@@ -119,19 +130,20 @@ def isValidStockSym(data):
         data.stock = Stock(data.stockSym, data.startDate, data.endDate)
         data.stock.setCompany()
         data.stock.drawStockGraph()
-        
     except Exception as e:
         print("Exception:", str(e))
         invalidStockSym(data)
 
 def timerFired(data):
     pass
-        
+
+#displays a warning message        
 def invalidStockSym(data):
     #global canvas
     tkinter.messagebox.showwarning("Warning", 
     "The Stock Symbol is invalid! Please try again.")
 
+#draws buttons, statistics, graphs
 def redrawAll(canvas, data):
     drawSearchBars(canvas, data)
     #drawTypePriceButtons(canvas, data)
@@ -140,7 +152,7 @@ def redrawAll(canvas, data):
         drawZoomButtons(canvas, data)
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
-        data.stock.drawStockNewsFigure(canvas)
+        data.stock.drawStockNewsFigure(canvas, data.scroll)
         if data.mouseOnGraph == True:
             data.stock.drawPrices(canvas, data.figX, data.figY)
     else:
@@ -194,7 +206,9 @@ def drawSearchBars(canvas, data):
 def drawUserInput(canvas, data):
     canvas.create_text(data.width/2, 50, text = data.stockSym)
 
-# I added mouseMovement
+# I added mouseMovement and referenced 
+#https://stackoverflow.com/questions/22925599/mouse-position-python-tkinter and
+#the 15112 website!
 ####################################
 # use the run function as-is
 ####################################
