@@ -8,6 +8,8 @@ import datetime
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.pyplot
+import matplotlib.ticker as mticker
+import matplotlib.dates as mdates
 from tkinter import *
 import string
 import quandl
@@ -89,16 +91,17 @@ class Stock(object):
             self.price = self.getPrices('Adj_Close')
             graph.plot(self.price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
+
+        graph.xaxis.set_major_locator(mticker.MaxNLocator(6))
+        graph.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+        labelsx = graph.get_xticklabels()
+        matplotlib.pyplot.setp(labelsx, rotation=30, fontsize=9)
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
         matplotlib.pyplot.title(self.company, color = "magenta")
         self.low, self.high = graph.get_ylim()
+        matplotlib.pyplot.tight_layout()
         self.figure = chart
-        
-    """def mouseMotion(self, event):
-        date = event.xdata
-        price = event.ydata
-        return date, price"""
         
     def drawPrices(self, canvas, x, y):
         highPixel = 183
@@ -112,19 +115,20 @@ class Stock(object):
         canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
 
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
-        canvas.create_rectangle(loc[0], loc[1] + 400,
-        loc[0] + 250, loc[1] + 525)
-        canvas.create_text((loc[0] + 10, loc[1] + 420),
+        canvas.create_rectangle(loc[0], loc[1] + 390,
+        loc[0] + 250, loc[1] + 525, outline = "DarkOrchid3",
+        fill = "white", width = 4)
+        canvas.create_text((loc[0] + 10, loc[1] + 410),
         text = "Stock Statistics Analysis Data", anchor = W)
         fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
-        canvas.create_text((loc[0] + 10, loc[1] + 450),
+        canvas.create_text((loc[0] + 10, loc[1] + 440),
         text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)),
         anchor = W)
-        canvas.create_text((loc[0] + 10, loc[1] + 480),
+        canvas.create_text((loc[0] + 10, loc[1] + 470),
         text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)),
         anchor = W)
         volatility = self.getVolatility()
-        canvas.create_text((loc[0] + 10, loc[1] + 510),
+        canvas.create_text((loc[0] + 10, loc[1] + 500),
         text = "Volatility: " + str(round(volatility, 3)), anchor = W)
         
     def getStockAnalysisData(self):
@@ -178,27 +182,23 @@ class Stock(object):
             count += 1
         return total/count
         
-    def drawStockNewsFigure(self, canvas, locStats=(50, 140),
-    locTitles = (610, 140)):
-        canvas.create_rectangle(locStats[0] + 300, locStats[1] + 400,
-        locStats[0] + 700, locStats[1] + 525)
-        canvas.create_text((locStats[0] + 310, locStats[1] + 420),
-        text="NEWS SUMMARY :", anchor = W)
+    def drawStockNewsFigure(self, canvas, locStats=(50, 140)):
+        canvas.create_rectangle(locStats[0] + 300, locStats[1] + 390,
+        locStats[0] + 700, locStats[1] + 525, outline = "DarkOrchid3",
+        fill = "white", width = 4)
+        canvas.create_text((locStats[0] + 310, locStats[1] + 410),
+        text = "NEWS SUMMARY:", anchor = W)
         sScore, rScore, newsTitles = self.getStockNewsData()
-        canvas.create_text((locStats[0] + 430, locStats[1] + 420),
-        text="Sentiment = "+ str(sScore), anchor = W)
-        canvas.create_text((locStats[0] + 430, locStats[1] + 440),
-        text="Relevance = "+ str(rScore), anchor = W)
-        canvas.create_rectangle(locTitles[0], locTitles[1], locTitles[0] + 190,
-        locTitles[1] + 400)
-        canvas.create_text(locTitles[0] + 10, locTitles[1] + 10,
+        canvas.create_text((locStats[0] + 430, locStats[1] + 410),
+        text = "Sentiment = "+ str(sScore), anchor = W)
+        canvas.create_text((locStats[0] + 430, locStats[1] + 430),
+        text = "Relevance = "+ str(rScore), anchor = W)
+        canvas.create_text(locStats[0] + 310, locStats[1] + 450,
         text = "News Titles: ", anchor = W)
         for i in range(len(newsTitles)):
-            canvas.create_text((locTitles[0] + 10,
-            locTitles[1] + ((i + 2) * 20)), text=newsTitles[i], anchor = W)
-
-    def drawNewsHeaders(self, canvas, location = (650, 140)):
-        pass
+            canvas.create_text((locStats[0] + 310,
+            locStats[1] + 410 + ((i + 3) * 20)),
+            text=newsTitles[i], anchor = W)
 
     def getStockNewsData(self):
         companyName = ''
