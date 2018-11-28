@@ -1,3 +1,10 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
+#learned from this tutorial:
+#https://enlight.nyc/projects/stock-market-prediction/ 
+
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
@@ -24,14 +31,14 @@ def forecast30Days(symbol):
     y = np.array(dataStocks['Prediction'])
     y = y[:-predictionDays]
 
-    (X_train, X_test, y_train,
-    y_test) = sklearn.model_selection.train_test_split(X, y, test_size = 0.2)
+    (xTrain, xTest, yTrain,
+    yTest) = sklearn.model_selection.train_test_split(X, y, test_size = 0.2)
 
     # Training
     clf = LinearRegression()
-    clf.fit(X_train,y_train)
+    clf.fit(xTrain,yTrain)
     # Testing
-    confidence = clf.score(X_test, y_test)
+    confidence = clf.score(xTest, yTest)
     predictions = clf.predict(priceForecast)
     todayExact = datetime.now()
     days = pd.date_range(todayExact, todayExact + timedelta(29), freq='D')
