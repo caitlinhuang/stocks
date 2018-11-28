@@ -6,15 +6,15 @@
 #tk_canvas_sgskip.html and the 15112 website
 
 from tkinter import *
+import webScraper
 import tkinter.messagebox
+import datetime
+import dateutil.relativedelta
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from stock import *
-import webScraper
-import datetime
-import dateutil.relativedelta
 
 ####################################
 # customize these functions
@@ -57,7 +57,8 @@ def mousePressedZoom(event, data):
         data.timeFrameStatus = data.timeFrames[indexZoomClick]
         setDates(data)
         isValidStockSym(data)
-        
+
+#sets the dates that the graph will display
 def setDates(data):
     if data.timeFrameStatus == "1 Week":
         startDateUncleaned = str(data.now - datetime.timedelta(days = 7))
@@ -117,6 +118,8 @@ def isValidStockSym(data):
     try:
         data.stock = Stock(data.stockSym, data.startDate, data.endDate)
         data.stock.setCompany()
+        data.stock.drawStockGraph()
+        
     except Exception as e:
         print("Exception:", str(e))
         invalidStockSym(data)
@@ -135,13 +138,13 @@ def redrawAll(canvas, data):
     drawUserInput(canvas, data)
     if data.stock != None:
         drawZoomButtons(canvas, data)
-        data.stock.drawStockGraph()
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
         data.stock.drawStockNewsFigure(canvas)
-        #if data.mouseOnGraph == True:
-            #data.stock.drawPrices(canvas, data.figX, data.figY)
+        if data.mouseOnGraph == True:
+            data.stock.drawPrices(canvas, data.figX, data.figY)
     else:
+        #draws start page items
         canvas.create_rectangle(100, 100, data.width - 100, data.height - 100,
         outline = "white", fill = "white")
         canvas.create_text(data.width/2, 150, text = "Stockometer",
@@ -150,7 +153,8 @@ def redrawAll(canvas, data):
         anchor = NW)
         drawFakeGraph(canvas, data)
     data.action = 'no'
-    
+
+#draws a graph just for display on the start page
 def drawFakeGraph(canvas, data):
     canvas.create_line(150, data.height/2 - 100, 150, data.height/2 + 100,
     width = 5)
@@ -162,8 +166,6 @@ def drawFakeGraph(canvas, data):
     width = 2)
     canvas.create_line(270, data.height/2 + 12, 300, data.height/2 - 100,
     width = 2)
-    
-    
     
 def drawZoomButtons(canvas, data):
     xStartButtons = 50
