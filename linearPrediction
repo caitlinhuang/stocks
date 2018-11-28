@@ -17,7 +17,6 @@ def forecast30Days(symbol):
     predictionDays = 30 # predicting 30 days into future
     #label column with data shifted 30 units up to make a space for the data
     dataStocks['Prediction'] = dataStocks[['Adj_Close']].shift(-predictionDays) 
-    #print(dataStocks['Prediction'])
     X = np.array(dataStocks.drop(['Prediction'], 1))
     X = preprocessing.scale(X)
     priceForecast = X[-predictionDays:] # set X_forecast equal to last 30
@@ -33,13 +32,9 @@ def forecast30Days(symbol):
     clf.fit(X_train,y_train)
     # Testing
     confidence = clf.score(X_test, y_test)
-    print("confidence: ", confidence)
-
     predictions = clf.predict(priceForecast)
-    print(predictions)
     todayExact = datetime.now()
     days = pd.date_range(todayExact, todayExact + timedelta(29), freq='D')
     forecastPrices = pd.DataFrame({'date': days, 'Price': predictions})
     forecastPrices = forecastPrices.set_index('date')
-    print(forecastPrices)
     return forecastPrices
