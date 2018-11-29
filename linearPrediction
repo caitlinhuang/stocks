@@ -19,14 +19,14 @@ def forecast30Days(symbol):
     today = str(today)[:10]
     eightYearsAgo = str(int(today[:4]) - 8) + today[4:10]
     dataStocks = quandl.get("EOD/" + symbol, trim_start = eightYearsAgo,
-    trim_end = today, authtoken=auth_tok)#, returns = 'numpy')
+    trim_end = today, authtoken=auth_tok)
     dataStocks = dataStocks[['Adj_Close']]
     predictionDays = 30 # predicting 30 days into future
     #label column with data shifted 30 units up to make a space for the data
     dataStocks['Prediction'] = dataStocks[['Adj_Close']].shift(-predictionDays) 
     X = np.array(dataStocks.drop(['Prediction'], 1))
     X = preprocessing.scale(X)
-    priceForecast = X[-predictionDays:] # set X_forecast equal to last 30
+    priceForecast = X[-predictionDays:]
     X = X[:-predictionDays] # remove last 30 from X
     y = np.array(dataStocks['Prediction'])
     y = y[:-predictionDays]
