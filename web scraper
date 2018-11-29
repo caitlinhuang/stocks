@@ -1,5 +1,10 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
 #code from https://www.scrapehero.com/scrape-nasdaq-stock-market-data/
-#note: This code was only used to get one attribute of the stock class
+#note: This code was only used to get one attribute of the stock 
+#class (the company's name)
 
 import numpy
 import pandas
