@@ -13,6 +13,7 @@ import sklearn
 from sklearn.linear_model import LinearRegression
 from sklearn import preprocessing
 
+#forecasts stock prices 30 days into the future through linear regression
 def forecast30Days(symbol):
     auth_tok = "c2V_sVydLtbotC8xN8sH"
     today = datetime.now()
@@ -27,13 +28,11 @@ def forecast30Days(symbol):
     X = np.array(dataStocks.drop(['Prediction'], 1))
     X = preprocessing.scale(X)
     priceForecast = X[-predictionDays:]
-    X = X[:-predictionDays] # remove last 30 from X
+    X = X[:-predictionDays] #remove the number predicted from X
     y = np.array(dataStocks['Prediction'])
     y = y[:-predictionDays]
-
     (xTrain, xTest, yTrain,
     yTest) = sklearn.model_selection.train_test_split(X, y, test_size = 0.2)
-
     # Training
     clf = LinearRegression()
     clf.fit(xTrain,yTrain)
