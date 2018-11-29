@@ -39,8 +39,8 @@ class Stock(object):
         sDate = startDate.split('-')
         self.startTime = sDate[0] + sDate[1] + sDate[2]
         self.price = list()
-        #(sScore, rScore, newsTitles, 
-        #self.stories) = self.getStockNewsData()
+        (self.sScore, self.rScore, self.newsTitles, 
+        self.stories) = self.getStockNewsData()
 
     #sets the company
     def setCompany(self):
@@ -50,11 +50,10 @@ class Stock(object):
         for word in separatedName[:-7]:
             name += word + " "
         self.company = name
+        return self.company
     
-    
+    #draws a matplotlib graph on the canvas
     def drawStockFigure(self, canvas, loc=(50, 140)):
-        #draws a matplotlib graph on the tkinter canvas
-        #location of top-left corner of figure on canvas in pixels.
         self.chart = FigureCanvasAgg(self.figure)
         self.chart.draw()
         (self.chartX, self.chartY, self.chartWidth, 
@@ -69,6 +68,7 @@ class Stock(object):
         tkagg.blit(self.display, self.chart.get_renderer()._renderer,
         colormode = 2)
 
+    #gets the stock prices depending on the dates, symbol, and fieldname
     def getPrices(self, fieldName):
         auth_tok = "c2V_sVydLtbotC8xN8sH"
         uncleanedDate = str(datetime.datetime.now())
@@ -89,6 +89,7 @@ class Stock(object):
             authtoken=auth_tok)
         return stockRawData.get(fieldName)
 
+    #sets up the graph
     def drawStockGraph(self):
         """while self.company == None:
             time.sleep(0.001)"""
@@ -103,7 +104,6 @@ class Stock(object):
             self.price = self.getPrices('Adj_Close')
             graph.plot(self.price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
-
         graph.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(6))
         graph.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%Y-%m-%d"))
         labelsx = graph.get_xticklabels()
@@ -114,7 +114,8 @@ class Stock(object):
         self.low, self.high = graph.get_ylim()
         matplotlib.pyplot.tight_layout()
         self.figure = chart
-        
+    
+    #displays the price of where the user puts the mouse
     def drawPrices(self, canvas, x, y):
         highPixel = 183
         lowPixel = 499
@@ -125,7 +126,8 @@ class Stock(object):
         canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
         outline = "gold")
         canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
-
+    
+    #displays the statistical analysis
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         canvas.create_rectangle(loc[0], loc[1] + 380,
         loc[0] + 250, loc[1] + 550, outline = "DarkOrchid3",
@@ -145,7 +147,8 @@ class Stock(object):
         
     def getStockAnalysisData(self):
         pass
-
+    
+    #gets moving averages
     def get50And200DayMovingAvg(self):
         recentPrices = self.getPricesInOverOneYear('Adj_Close')
         last50 = recentPrices[-50:]
@@ -200,11 +203,14 @@ class Stock(object):
     #displays analysis of relevant news articles and the 
     #top 3 most relevant articles
     def drawStockNewsFigure(self, canvas, scroll, locStats=(50, 140)):
-        sScore, rScore, newsTitles, stories = self.getStockNewsData()
+        #sScore, rScore, newsTitles, stories = self.getStockNewsData()
         canvas.create_rectangle(locStats[0] + 560, locStats[1],
         locStats[0] + 780, locStats[1] + 350, outline = "DarkOrchid3",
         fill = "white", width = 4)
-        story1 = self.justifyText(stories[0], 30)
+        #story1 = self.justifyText(stories[0], 30)
+        #canvas.create_text(locStats[0] + 563, locStats[1] - scroll,
+        #text = stories[0], anchor = NW, justify = LEFT, width = 150)
+        story1 = self.justifyText(self.stories[0], 30)
         canvas.create_text(locStats[0] + 563, locStats[1] - scroll,
         text = story1, anchor = NW)
         #covers unneeded text when being scrolled
@@ -217,18 +223,19 @@ class Stock(object):
         fill = "white", width = 4)
         canvas.create_text((locStats[0] + 310, locStats[1] + 400),
         text = "NEWS SUMMARY:", anchor = W)
+        sentimentText = "Sentiment = "+ str(float(self.sScore)/10)
+        relevanceText = " Relevance = " + str(self.rScore)
         canvas.create_text((locStats[0] + 430, locStats[1] + 400),
-        text = "Sentiment = "+ str(float(sScore)/10) + " Relevance = " + str(rScore),
-        anchor = W)
+        text = sentimentText + relevanceText, anchor = W)
         canvas.create_text((locStats[0] + 310, locStats[1] + 430),
         text = "Relevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment.",
         anchor = W)
         canvas.create_text(locStats[0] + 310, locStats[1] + 465,
         text = "News Titles: ", anchor = W)
-        for i in range(len(newsTitles)):
+        for i in range(len(self.newsTitles)):
             canvas.create_text((locStats[0] + 310,
             locStats[1] + 405 + ((i + 4) * 20)),
-            text = newsTitles[i], anchor = W)
+            text = self.newsTitles[i], anchor = W)
 
     #searches in the dataset for articles relevant to the company and calls a 
     #function that does analysis on the sentiment and relevance
@@ -248,7 +255,8 @@ class Stock(object):
         stories) = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
         keyWord01, keyWord02, self.startTime, self.endTime)
         return sScore, rScore, newsTitles, stories
-        
+    
+    #modified version of justify text from HW 3
     def justifyText(self, text, width):
         #returns a string with same width on each line
         justified = ""
@@ -265,7 +273,7 @@ class Stock(object):
         return justified
 
     def antiParagraphBreak(self, text):
-        #gets rid of extra spaces in text
+        #gets rid of paragraph break characters in text
         newText = ""
         for word in text.split("</br></br>"):
             newText += word.strip()
