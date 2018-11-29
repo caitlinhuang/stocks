@@ -1,14 +1,20 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
 import math
 import pandas as pd
 import numpy as np
 import os
 import json
 
-def isFloat(value):
+def isFloat(x):
     try:
-        x = float(value)
-        if math.isnan(x): return False
-        else: return True
+        possFloat = float(x)
+        if math.isnan(possFloat):
+            return False
+        else:
+            return True
     except ValueError:
         return False
 
@@ -26,6 +32,8 @@ def convertDate(dateBeforeClean):
         day = '0'+day
     return year+month+day
 
+#calculates the average sentiment and relevancy of the articles to the company
+#gets the most relevant article titles and content
 def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
     df = pd.read_csv(file,encoding='latin-1')
     df['mentioned'] = ''
