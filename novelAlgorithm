@@ -1,0 +1,33 @@
+#Caitlin Huang
+#caitlinh
+#section G
+
+import csv
+import pandas
+import math
+
+#the algorithm is nonweighted by default. The weights can be adjusted.
+def nearestNeighbor(dataIn, steps, weights = [1] * len(dataIn)):
+    train = pandas.read_csv("news_sample.csv")
+    #sentiment receives a weight of 3. Relevancy receives a weight of 1
+    distance = list()
+    #train
+    for i in range(len(train.index)):
+        distance.append(abs(dataIn[0] - train.iloc[[i], 
+        :].get('sentimentPositive').values[0]) * weights[0] \
+         + abs([dataIn[1] - train.iloc[i],
+        :].get("relevance")) * weights[1])
+    
+    minIndex = distance.index(min(distance))
+    minDistance = min(distance)
+    difference = train.iloc
+        
+    predictions = list()
+    prevValue = dataIn[-1] #last index is the predicted value
+    for i in range(len(predictions)):
+        # a momentum term is used to determine how long the increase will last
+        prevValue = close + difference
+        predictions.append(prevValue)
+        
+def convertReturnsToDifferences(close1, close2, data):
+    pass
