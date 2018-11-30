@@ -77,8 +77,6 @@ class Stock(object):
             authtoken = auth_tok, collapse = "annually")
         if self.startTime == "19800101":
             pass
-            """stockRawData = quandl.get("EOD/" + self.symbol,
-            authtoken = auth_tok, collapse = "annually")"""
         elif int(self.endTime[:4]) - int(self.startTime[:4]) == 5:
             stockRawData = quandl.get("EOD/" + self.symbol,
             trim_start = self.startTime, trim_end = lstDate[0],
@@ -94,7 +92,7 @@ class Stock(object):
         """while self.company == None:
             time.sleep(0.001)"""
         chart = matplotlib.pyplot.figure(facecolor = "green",
-        figsize = (6, 4), dpi = 90)
+        figsize = (7, 4), dpi = 86)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
         if self.startTime == self.endTime:
             forecast = linearPrediction.forecast30Days(self.symbol)
@@ -125,7 +123,7 @@ class Stock(object):
         priceDisplay = proportionGraph * yChange
         canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
         outline = "gold")
-        canvas.create_text(x, y - 20, text = round(float(priceDisplay), 2))
+        canvas.create_text(x, y - 20, text = round(float(priceDisplay) + 20, 2))
     
     #displays the statistical analysis
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
@@ -202,40 +200,39 @@ class Stock(object):
     
     #displays analysis of relevant news articles and the 
     #top 3 most relevant articles
-    def drawStockNewsFigure(self, canvas, scroll, locStats=(50, 140)):
-        #sScore, rScore, newsTitles, stories = self.getStockNewsData()
-        canvas.create_rectangle(locStats[0] + 560, locStats[1],
-        locStats[0] + 780, locStats[1] + 350, outline = "DarkOrchid3",
-        fill = "white", width = 4)
-        #story1 = self.justifyText(stories[0], 30)
-        #canvas.create_text(locStats[0] + 563, locStats[1] - scroll,
-        #text = stories[0], anchor = NW, justify = LEFT, width = 150)
-        story1 = self.justifyText(self.stories[0], 30)
-        canvas.create_text(locStats[0] + 563, locStats[1] - scroll,
+    def drawStockNewsFigure(self, canvas, scroll):
+        startNewsBoxX = 670
+        startNewsBoxY = 95
+        newsBoxWidth = 280
+        newsBoxHeight = 400
+        canvas.create_rectangle(startNewsBoxX, startNewsBoxY,
+        950, startNewsBoxY + newsBoxHeight,
+        outline = "DarkOrchid3", fill = "white", width = 4)
+        story1 = self.justifyText(self.stories[0], 35)
+        canvas.create_text(startNewsBoxX + 3, startNewsBoxY + 3 - scroll,
         text = story1, anchor = NW)
         #covers unneeded text when being scrolled
-        canvas.create_rectangle(locStats[0] + 561, 0, locStats[0] + 780,
-        locStats[1] - 3, outline = "deep sky blue", fill = "deep sky blue") 
-        canvas.create_rectangle(locStats[0] + 560, locStats[1] + 350, 850,
-        700, outline = "deep sky blue", fill = "deep sky blue")
-        canvas.create_rectangle(locStats[0] + 300, locStats[1] + 380,
-        locStats[0] + 700, locStats[1] + 550, outline = "DarkOrchid3",
-        fill = "white", width = 4)
-        canvas.create_text((locStats[0] + 310, locStats[1] + 400),
-        text = "NEWS SUMMARY:", anchor = W)
+        canvas.create_rectangle(startNewsBoxX, 0, 950,
+        startNewsBoxY - 2, outline = "deep sky blue", fill = "deep sky blue")
+        canvas.create_rectangle(startNewsBoxX,
+        startNewsBoxY + newsBoxHeight + 2, 1000, 700,
+        outline = "deep sky blue", fill = "deep sky blue")
+        newsStatsX = 350
+        newsStatsY = 520
+        newsStatsWidth = 400
+        newsStatsHeight = 170
+        canvas.create_rectangle(newsStatsX, newsStatsY,
+        950, newsStatsY + newsStatsHeight,
+        outline = "DarkOrchid3", fill = "white", width = 4)
         sentimentText = "Sentiment = "+ str(float(self.sScore)/10)
         relevanceText = " Relevance = " + str(self.rScore)
-        canvas.create_text((locStats[0] + 430, locStats[1] + 400),
-        text = sentimentText + relevanceText, anchor = W)
-        canvas.create_text((locStats[0] + 310, locStats[1] + 430),
-        text = "Relevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment.",
-        anchor = W)
-        canvas.create_text(locStats[0] + 310, locStats[1] + 465,
-        text = "News Titles: ", anchor = W)
+        canvas.create_text(newsStatsX, newsStatsY,
+        text = "NEWS SUMMARY: " + sentimentText + relevanceText + "\nRelevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment." + "\n" + "News Titles: ", anchor = NW)
+        titles = ""
         for i in range(len(self.newsTitles)):
-            canvas.create_text((locStats[0] + 310,
-            locStats[1] + 405 + ((i + 4) * 20)),
-            text = self.newsTitles[i], anchor = W)
+            titles = titles + self.justifyText(self.newsTitles[i], 60) + "\n"
+        canvas.create_text(newsStatsX, newsStatsY + 80,
+        text = titles, anchor = NW)
 
     #searches in the dataset for articles relevant to the company and calls a 
     #function that does analysis on the sentiment and relevance
