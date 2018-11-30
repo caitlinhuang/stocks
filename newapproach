@@ -25,9 +25,9 @@ def init(data):
     data.endDate = endDateUncleaned[:10]
     data.startDate = '1980-01-01'
     data.clickStockEntry = False
-    data.timeFrameStatus = "1 Week"
+    data.timeFrameStatus = "Max"
     data.timeFrames = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years",
-    "Max", "30 Day Prediction"]
+    "Max", "30 Day Prediction", "50 Day Prediction"]
     data.retrieving = False
     data.graphAvailable = False
     data.stock = None
@@ -41,20 +41,21 @@ def init(data):
     data.pig = data.pig.subsample(2, 2)
     data.scroll = 0
     data.scrollAmount = 30
+    data.xStartButtons = 52
+    data.yStartButtons = 95
+    data.buttonHeight = 40
+    data.buttonWidth = 75
+    data.numButtons = 8
 
 #tracks which time periods the user wants to see
 def mousePressedZoom(event, data):
     data.action = 'yes'
-    xStartButtons = 50
-    yStartButtons = 95
-    buttonHeight = 40
-    buttonWidth = 80
-    numButtons = 7
-    if event.x > xStartButtons and \
-    event.x < xStartButtons + (numButtons * buttonWidth) and \
-    event.y > yStartButtons and event.y < yStartButtons + buttonHeight:
+    if event.x > data.xStartButtons and \
+    event.x < data.xStartButtons + (data.numButtons * data.buttonWidth) and \
+    event.y > data.yStartButtons and \
+    event.y < data.yStartButtons + data.buttonHeight:
         data.clickStockEntry = False
-        indexZoomClick = (event.x - xStartButtons)//buttonWidth
+        indexZoomClick = (event.x - data.xStartButtons)//data.buttonWidth
         data.timeFrameStatus = data.timeFrames[indexZoomClick]
         setDates(data)
         isValidStockSym(data)
@@ -152,7 +153,8 @@ def redrawAll(canvas, data):
         drawZoomButtons(canvas, data)
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
-        data.stock.drawStockNewsFigure(canvas, data.scroll)
+        if data.timeFrameStatus == "5 Years" or data.timeFrameStatus == "Max":
+            data.stock.drawStockNewsFigure(canvas, data.scroll)
         if data.mouseOnGraph == True:
             data.stock.drawPrices(canvas, data.figX, data.figY)
     else:
@@ -180,22 +182,18 @@ def drawFakeGraph(canvas, data):
     width = 2)
     
 def drawZoomButtons(canvas, data):
-    xStartButtons = 50
-    yStartButtons = 95
-    buttonHeight = 40
-    buttonWidth = 80
-    numButtons = 7
     timespans = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", 
-    "Max", "Thirty-day\nForecast"]
-    for i in range(numButtons):
+    "Max", "30-day\nForecast", "50-day\nForecast"]
+    for i in range(data.numButtons):
         color = "DarkOrchid1"
         if i % 2 == 0:
             color = "cyan"
-        canvas.create_rectangle(xStartButtons + i * buttonWidth, yStartButtons, 
-        xStartButtons + (i + 1) * buttonWidth, yStartButtons + buttonHeight, 
-        fill = color)
-        canvas.create_text(xStartButtons + buttonWidth/2 + buttonWidth * i, 
-        yStartButtons + buttonHeight/2, text = timespans[i])
+        canvas.create_rectangle(data.xStartButtons + i * data.buttonWidth,
+        data.yStartButtons, data.xStartButtons + (i + 1) * data.buttonWidth,
+        data.yStartButtons + data.buttonHeight, 
+        fill = color, outline = "spring green", width = 3)
+        canvas.create_text(data.xStartButtons + data.buttonWidth/2 + data.buttonWidth * i, 
+        data.yStartButtons + data.buttonHeight/2, text = timespans[i])
     
 def drawSearchBars(canvas, data):
     canvas.create_text(data.width/2 - 200, 50, 
@@ -266,4 +264,4 @@ def run(width=300, height=300):
     root.mainloop()  # blocks until window is closed
     print("bye!")
 
-run(850, 700)
+run(1000, 700)
