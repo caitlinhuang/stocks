@@ -3,13 +3,14 @@
 #section G
 
 import csv
-import pandas
+import pandas as pd
 import math
 
 dataIn = [0.65, 0.18, 197]
 #the algorithm is nonweighted by default. The weights can be adjusted.
 def nearestNeighbor(dataIn, steps, weights = [1] * (len(dataIn) - 1)):
-    train = pandas.read_csv("marketDemoTrain")
+    train = \
+    pd.read_csv("/Users/caitlinhuang/Desktop/15112/termproject/marketDemoTrain")
     #sentiment receives a weight of 3. Relevancy receives a weight of 1
     distance = list()
     #train
