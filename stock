@@ -149,7 +149,8 @@ class Stock(object):
         loc[0] + 250, loc[1] + 550, outline = "DarkOrchid3",
         fill = "white", width = 4)
         canvas.create_text((loc[0] + 10, loc[1] + 400),
-        text = "Stock Statistics Analysis Data", anchor = W)
+        text = "Stock Statistics Analysis Data", anchor = W,
+        font = "Symbol 16 bold")
         fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
         canvas.create_text((loc[0] + 10, loc[1] + 430),
         text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)),
@@ -228,12 +229,15 @@ class Stock(object):
         canvas.create_rectangle(startNewsBoxX, startNewsBoxY,
         950, startNewsBoxY + newsBoxHeight,
         outline = "DarkOrchid3", fill = "white", width = 4)
-        story1 = self.justifyText(self.stories[0], 35)
+        newspaper = ""
+        for i in range(len(self.stories)):
+            newspaper = newspaper + \
+            self.justifyText(self.stories[i], 39) + "\n" + ("_" * 45) + "\n"
         canvas.create_text(startNewsBoxX + 3, startNewsBoxY + 3 - scroll,
-        text = story1, anchor = NW)
+        text = newspaper, anchor = NW)
         #covers unneeded text when being scrolled
         canvas.create_rectangle(startNewsBoxX, 0, 950,
-        startNewsBoxY - 2, outline = "deep sky blue", fill = "deep sky blue")
+        startNewsBoxY - 3, outline = "deep sky blue", fill = "deep sky blue")
         canvas.create_rectangle(startNewsBoxX,
         startNewsBoxY + newsBoxHeight + 2, 1000, 700,
         outline = "deep sky blue", fill = "deep sky blue")
@@ -247,12 +251,28 @@ class Stock(object):
         sentimentText = "Sentiment = "+ str(float(self.sScore)/10)
         relevanceText = " Relevance = " + str(self.rScore)
         canvas.create_text(newsStatsX + 5, newsStatsY + 5,
-        text = "NEWS SUMMARY: " + sentimentText + relevanceText + "\nRelevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment." + "\n" + "News Titles: ", anchor = NW)
+        text = "NEWS SUMMARY:", anchor = NW, font = "Symbol 14 bold")
+        canvas.create_text(newsStatsX + 122, newsStatsY + 3,
+        text = sentimentText + relevanceText, anchor = NW)
+        canvas.create_text(newsStatsX + 5, newsStatsY + 18,
+        text = "Relevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment.", anchor = NW)
+        canvas.create_text(newsStatsX + 5, newsStatsY + 70,
+        text = "News Titles: ", anchor = NW, font = "Symbol 14 bold")
         titles = ""
         for i in range(len(self.newsTitles)):
             titles = titles + self.justifyText(self.newsTitles[i], 90) + "\n"
-        canvas.create_text(newsStatsX + 5, newsStatsY + 85,
-        text = titles, anchor = NW)
+        canvas.create_text(newsStatsX + 5, newsStatsY + 85, text = titles,
+        anchor = NW)
+        self.drawTextBoxOutlines(canvas, startNewsBoxX, startNewsBoxY,
+        newsBoxWidth, newsBoxHeight)
+        
+    def drawTextBoxOutlines(self, canvas, x, y, width, height):
+        canvas.create_line(x, y, x + width, y, fill = "DarkOrchid3", width = 4)
+        canvas.create_line(x + width, y, x + width, y + height,
+        fill = "DarkOrchid3", width = 4)
+        canvas.create_line(x, y, x, y + height, fill = "DarkOrchid3", width = 4)
+        canvas.create_line(x, y + height, x + width, y + height,
+        fill = "DarkOrchid3", width = 4)
 
     #searches in the dataset for articles relevant to the company and calls a 
     #function that does analysis on the sentiment and relevance
