@@ -41,6 +41,11 @@ class Stock(object):
         self.price = list()
         (self.sScore, self.rScore, self.newsTitles, 
         self.stories) = self.getStockNewsData()
+        self.lowPrice = 0
+        self.highPrice = 0
+        self.early = 0
+        self.recnt = 0
+        self.buy = True
 
     #sets the company
     def setCompany(self):
@@ -89,8 +94,6 @@ class Stock(object):
 
     #sets up the graph
     def drawStockGraph(self):
-        """while self.company == None:
-            time.sleep(0.001)"""
         chart = matplotlib.pyplot.figure(facecolor = "green",
         figsize = (7, 4), dpi = 86)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
@@ -109,21 +112,32 @@ class Stock(object):
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
         matplotlib.pyplot.title(self.company, color = "magenta")
-        self.low, self.high = graph.get_ylim()
+        self.lowPrice, self.highPrice = graph.get_ylim()
+        self.early, self.recent = graph.get_xlim()
         matplotlib.pyplot.tight_layout()
         self.figure = chart
     
     #displays the price of where the user puts the mouse
-    def drawPrices(self, canvas, x, y):
-        highPixel = 183
-        lowPixel = 499
+    def drawPricesAndDate(self, canvas, x, y):
+        highPixel = 171
+        lowPixel = 404
+        lowDatePix = 113
+        highDatePix = 636
         yChange = abs(y - lowPixel)
-        difference = abs(self.high - self.low)
-        proportionGraph = difference/(lowPixel - highPixel)
-        priceDisplay = proportionGraph * yChange
+        difference = abs(self.highPrice - self.lowPrice)
+        #high and low are everything on the whole graph
+        priceDisplay = (difference * yChange)/(lowPixel - highPixel)
         canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
         outline = "gold")
-        canvas.create_text(x, y - 20, text = round(float(priceDisplay) + 20, 2))
+        pixelsFromToday = abs(x - highDatePix)
+        daysFromMax = round((pixelsFromToday * \
+        (self.recent - self.early))/(highDatePix - lowDatePix))
+        dateDisplay = str(datetime.datetime.today() - \
+        datetime.timedelta(days = daysFromMax))
+        dateDisplay = dateDisplay[:10]
+        canvas.create_text(x, y - 20,
+        text = dateDisplay + ", " + \
+        str(round(float(priceDisplay) + self.lowPrice, 2)))
     
     #displays the statistical analysis
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
@@ -153,6 +167,8 @@ class Stock(object):
         fiftyMoveAvg = self.mean(last50)
         last200 = recentPrices[-200:]
         twoHundredMoveAvg = self.mean(last200)
+        if fiftyMoveAvg < twoHundredMoveAvg:
+            self.buy = False
         return fiftyMoveAvg, twoHundredMoveAvg
     
     #gets prices for statistical analysis because self.price
@@ -226,12 +242,12 @@ class Stock(object):
         outline = "DarkOrchid3", fill = "white", width = 4)
         sentimentText = "Sentiment = "+ str(float(self.sScore)/10)
         relevanceText = " Relevance = " + str(self.rScore)
-        canvas.create_text(newsStatsX, newsStatsY,
+        canvas.create_text(newsStatsX + 5, newsStatsY + 5,
         text = "NEWS SUMMARY: " + sentimentText + relevanceText + "\nRelevance and Sentiment are scored on a scale from 0 - 1.\n0 is least relevant and most negative sentiment.\n1 is most relevant and most positive sentiment." + "\n" + "News Titles: ", anchor = NW)
         titles = ""
         for i in range(len(self.newsTitles)):
-            titles = titles + self.justifyText(self.newsTitles[i], 60) + "\n"
-        canvas.create_text(newsStatsX, newsStatsY + 80,
+            titles = titles + self.justifyText(self.newsTitles[i], 90) + "\n"
+        canvas.create_text(newsStatsX + 5, newsStatsY + 85,
         text = titles, anchor = NW)
 
     #searches in the dataset for articles relevant to the company and calls a 
