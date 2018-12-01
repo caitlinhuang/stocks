@@ -145,7 +145,6 @@ def invalidStockSym(data):
     tkinter.messagebox.showwarning("Warning", 
     "The Stock Symbol is invalid! Please try again.")
 
-#draw lines again to find new lows and highs. lol. what about dates??? try to deal with those lol.
 #draws buttons, statistics, graphs
 def redrawAll(canvas, data):
     drawSearchBars(canvas, data)
