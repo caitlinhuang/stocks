@@ -30,7 +30,7 @@ import dateutil.relativedelta
 #and start and end dates displayed
 class Stock(object):
     #intializes the symbol, company, graph, prices, and dates
-    def __init__(self, symbol, startDate, endDate):
+    def __init__(self, symbol, startDate, endDate, timeFrame):
         self.symbol = symbol
         self.company = None
         self.graph = None
@@ -46,6 +46,7 @@ class Stock(object):
         self.early = 0
         self.recnt = 0
         self.buy = True
+        self.timeFrame = timeFrame
 
     #sets the company
     def setCompany(self):
@@ -125,20 +126,23 @@ class Stock(object):
         highDatePix = 636
         yChange = abs(y - lowPixel)
         difference = abs(self.highPrice - self.lowPrice)
-        #high and low are everything on the whole graph
         priceDisplay = (difference * yChange)/(lowPixel - highPixel)
-        canvas.create_rectangle(x - 20, y - 30, x + 20, y - 10,
-        outline = "gold")
         pixelsFromToday = abs(x - highDatePix)
+        #high and low are everything on the whole graph
+        forecast = 0
+        if self.timeFrame == "30 Day Prediction":
+            forecast = 30
+        elif self.timeFrame == "50 Day Prediction":
+            forecast = 50
         daysFromMax = round((pixelsFromToday * \
         (self.recent - self.early))/(highDatePix - lowDatePix))
         dateDisplay = str(datetime.datetime.today() - \
-        datetime.timedelta(days = daysFromMax))
+        datetime.timedelta(days = daysFromMax) +\
+        datetime.timedelta(days = forecast))
         dateDisplay = dateDisplay[:10]
-        canvas.create_text(x, y - 20,
-        text = dateDisplay + ", " + \
+        canvas.create_text(x, y - 20, text = dateDisplay + ", " + \
         str(round(float(priceDisplay) + self.lowPrice, 2)))
-    
+
     #displays the statistical analysis
     def drawStockAnalysisFigure(self, canvas, loc=(50,140)):
         canvas.create_rectangle(loc[0], loc[1] + 380,
