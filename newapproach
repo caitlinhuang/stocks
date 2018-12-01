@@ -128,7 +128,8 @@ def keyPressed(event, data):
 #that is invalid, there is a warning message
 def isValidStockSym(data):
     try:
-        data.stock = Stock(data.stockSym, data.startDate, data.endDate)
+        data.stock = Stock(data.stockSym, data.startDate, data.endDate,
+        data.timeFrameStatus)
         data.stock.setCompany()
         data.stock.drawStockGraph()
     except Exception as e:
@@ -148,7 +149,6 @@ def invalidStockSym(data):
 #draws buttons, statistics, graphs
 def redrawAll(canvas, data):
     drawSearchBars(canvas, data)
-    #drawTypePriceButtons(canvas, data)
     drawUserInput(canvas, data)
     if data.stock != None:
         drawZoomButtons(canvas, data)
