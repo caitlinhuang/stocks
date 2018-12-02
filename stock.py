@@ -21,6 +21,7 @@ from newsPreProcess import newsPreProcess
 import linearPrediction
 import math
 import dateutil.relativedelta
+from tickerPreProcess import getCompanyName, insertCompanyName
 
 #referenced https://matplotlib.org/gallery/user_interfaces/embedding_in_
 #tk_canvas_sgskip.html, lib/matplotlib/backends/backend_tkagg.py,
@@ -48,14 +49,18 @@ class Stock(object):
         self.buy = True
         self.timeFrame = timeFrame
 
-    #sets the company
+#sets the company
     def setCompany(self):
-        uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
-        separatedName = uncleanedName.split(" ")
-        name = ""
-        for word in separatedName[:-7]:
-            name += word + " "
-        self.company = name
+        self.company = getCompanyName('./cname/companyName.csv', self.symbol)
+        if self.company == None:
+            uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
+            separatedName = uncleanedName.split(" ")
+            name = ""
+            for word in separatedName[:-7]:
+                name += word + " "
+            self.company = name
+            insertCompanyName('./cname/companyName.csv', self.symbol,
+            self.company)
         return self.company
     
     #draws a matplotlib graph on the canvas
