@@ -5,6 +5,8 @@
 import csv
 import pandas as pd
 import math
+import random
+from datetime import datetime, timedelta
 
 dataIn = [0.65, 0.18, 175]
 #the algorithm is nonweighted by default. The weights can be adjusted.
@@ -28,11 +30,14 @@ def nearestNeighbor(dataIn, steps, randomness, weights = [1] * (len(dataIn) - 1)
     prevValue = dataIn[-1] #last index is the predicted value
     for i in range(steps):
         # a momentum term is used to determine how long the increase will last
-        prevValue = prevValue + difference + random.uniform(-random * 100,
-        random * 100)
+        prevValue = prevValue + difference + random.uniform(-randomness * 100,
+        randomness * 100)
         predictions.append(round(prevValue, 2))
-    print("prediction", predictions)
-    return predictions
+    todayExact = datetime.now()
+    days = pd.date_range(todayExact, todayExact + timedelta(steps-1), freq='D')
+    forecastPrices = pd.DataFrame({'date': days, 'Price': predictions})
+    forecastPrices = forecastPrices.set_index('date')
+    return forecastPrices
 
 nearestNeighbor(dataIn, 30, 0.018, [1, 3])
 

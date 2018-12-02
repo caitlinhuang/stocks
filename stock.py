@@ -19,6 +19,7 @@ import time
 import datetime
 from newsPreProcess import newsPreProcess
 import linearPrediction
+import nearestNeighbor
 import math
 import dateutil.relativedelta
 from tickerPreProcess import getCompanyName, insertCompanyName
@@ -47,8 +48,11 @@ class Stock(object):
         self.early = 0
         self.recent = 0
         self.buy = True
+        self.volatility = 0
         self.timeFrame = timeFrame
         self.yearStockData = None
+        self.fiftyDayMovingAvg = 0
+        self.twoHundredMovingAvg = 0
 
     #sets the company
     def setCompany(self):
@@ -109,9 +113,17 @@ class Stock(object):
         chart = matplotlib.pyplot.figure(facecolor = "green",
         figsize = (7, 4), dpi = 86)
         graph = matplotlib.pyplot.subplot(1, 1, 1)
-        if self.startTime == self.endTime:
+        if self.timeFrame == "30 Day Prediction":
             forecast = linearPrediction.forecast30Days(self.symbol)
-            graph.plot(forecast, label = "Forecasted Closing Prices",
+            graph.plot(forecast, label = "Forecasted 30-Day Closing Prices",
+            linestyle = "-")
+        elif self.timeFrame == "50 Day Prediction":
+            self.price = self.getPrices("Adj_Close")
+            dataIn = [self.sScore, self.rScore,
+            self.price.iloc[-1]]
+            forecast = nearestNeighbor.nearestNeighbor(dataIn, 50,
+            self.volatility * 100, [3, 1])
+            graph.plot(forecast, label = "Forecasted 50-Day Closing Prices",
             linestyle = "-")
         else:
             self.price = self.getPrices('Adj_Close')
@@ -164,16 +176,19 @@ class Stock(object):
         canvas.create_text((loc[0] + 10, loc[1] + 400),
         text = "Stock Statistics Analysis Data", anchor = W,
         font = "Symbol 16 bold")
-        fiftyDayMovingAvg, twoHundredMovingAvg = self.get50And200DayMovingAvg()
+        (self.fiftyDayMovingAvg, 
+        self.twoHundredMovingAvg) = self.get50And200DayMovingAvg()
         canvas.create_text((loc[0] + 10, loc[1] + 430),
-        text = "50-Day Moving Average: " + str(round(fiftyDayMovingAvg, 2)),
+        text = "50-Day Moving Average: " + str(round(self.fiftyDayMovingAvg,
+        2)),
         anchor = W)
         canvas.create_text((loc[0] + 10, loc[1] + 460),
-        text = "200-Day Moving Average: " + str(round(twoHundredMovingAvg, 2)),
+        text = "200-Day Moving Average: " + str(round(self.twoHundredMovingAvg,
+        2)),
         anchor = W)
-        volatility = self.getVolatility()
+        self.volatility = self.getVolatility()
         canvas.create_text((loc[0] + 10, loc[1] + 490),
-        text = "Volatility: " + str(round(volatility, 3)), anchor = W)
+        text = "Volatility: " + str(round(self.volatility, 3)), anchor = W)
         
     def getStockAnalysisData(self):
         pass
@@ -192,7 +207,8 @@ class Stock(object):
     #gets prices for statistical analysis because self.price
     #may skip certain numbers
     def getPricesInOverOneYear(self, fieldname):
-        if self.yearStockData is not None: return self.yearStockData.get(fieldname)
+        if self.yearStockData is not None:
+            return self.yearStockData.get(fieldname)
         auth_tok = "c2V_sVydLtbotC8xN8sH"
         uncleanedDate = str(datetime.datetime.now())
         uncleanedStart = str(datetime.datetime.now() - \
@@ -247,7 +263,7 @@ class Stock(object):
         newspaper = ""
         for i in range(len(self.stories)):
             newspaper = newspaper + \
-            self.justifyText(self.stories[i], 39) + "\n" + ("_" * 45) + "\n"
+            self.justifyText(self.stories[i], 38) + "\n" + ("_" * 45) + "\n"
         canvas.create_text(startNewsBoxX + 3, startNewsBoxY + 3 - scroll,
         text = newspaper, anchor = NW)
         #covers unneeded text when being scrolled
@@ -283,8 +299,8 @@ class Stock(object):
         canvas.create_text(newsStatsX + 5, newsStatsY + 85, text = titles,
         anchor = NW)
     
-    def drawAdvisor(self, canvas, clicked):
-        if clicked == False:
+    def drawAdvisor(self, canvas, yes, no):
+        if yes == False and no == False:
             canvas.create_rectangle(980, 95, 1200, 495, fill = "white",
             outline = "DarkOrchid3", width = 4)
             canvas.create_text(985, 100,
@@ -296,6 +312,15 @@ class Stock(object):
             canvas.create_rectangle(1000, 360, 1180, 460, fill = "red")
             canvas.create_text(1090, 410, text = "NO", fill = "gold",
             font = "Symbol 16 bold")
+        else:
+            text = ""
+            if self.buy == False:
+                text = text + "You should not buy the stock because\n" 
+                if self.fiftyDayMovingAvg < self.twoHundredMovingAvg:
+                    text = text + "the fifty day moving average is less than the\ntwo hundred day moving average.\n"
+                    text = text + "This is known as the death cross. This\n"
+                    text = text + "indicates that stock prices will decrease."
+                text = text + "You are estimated a return of "
             
         
     def drawTextBoxOutlines(self, canvas, x, y, width, height):
@@ -317,7 +342,8 @@ class Stock(object):
         companyNameList = companyName.split(" ")
         keyWord01 = ' '+companyNameList[0]+' '
         if len(companyNameList) > 1:
-            keyWord02 = ' '+companyNameList[0]+ ' ' + companyNameList[1]+' '
+            keyWord02 = ' ' + companyNameList[0] + ' ' + \
+            companyNameList[1] + ' '
         else:
             keyWord02 = ' '
         (sScore, rScore, newsTitles,

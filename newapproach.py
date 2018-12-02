@@ -38,7 +38,10 @@ def init(data):
     data.action = 'yes'
     #photo from https://www.flickr.com/photos/pictures-of-money/16678606754
     data.pig = PhotoImage(file = "pig.png")
-    data.pig = data.pig.subsample(2, 2)
+    #photo from 
+    #https://www.vectorstock.com/royalty-free-vector/up-bull-market-rise-bullish-stock-chart-graph-vector-510738
+    data.bullGraph = PhotoImage(file = "bull.png")
+    data.bullGraph = data.bullGraph.subsample(2, 2)
     data.scroll = 0
     data.scrollAmount = 30
     data.xStartButtons = 52
@@ -46,7 +49,9 @@ def init(data):
     data.buttonHeight = 40
     data.buttonWidth = 75
     data.numButtons = 8
-    data.clickedAdvisor = False
+    data.chooseYes = False
+    data.chooseNo = False
+    data.score = 0
 
 #tracks which time periods the user wants to see
 def mousePressedZoom(event, data):
@@ -85,8 +90,10 @@ def setDates(data):
             data.startDate = str(currYear - 5) + uncleanedNow[4: 10]
     elif data.timeFrameStatus == "Max":
         data.startDate = "1980-01-01"
-    elif data.timeFrameStatus == "30 Day Prediction":
-        data.startDate = data.endDate
+    elif data.timeFrameStatus == "30 Day Prediction" or \
+    data.timeFrameStatus == "50 Day Prediction":
+        startDateUncleaned = str(data.now - datetime.timedelta(days = 7))
+        data.startDate = startDateUncleaned[:10]
 
 #general mouse pressed that checks if the user is 
 #in the areas that demand change on the screen            
@@ -95,6 +102,10 @@ def mousePressed(event, data):
     if event.x > data.width/2 - 100 and event.x < data.width/2 + 100 and \
     event.y > 40 and event.y < 60:
         data.clickStockEntry = True
+    elif event.x > 1000 and event.x < 1180 and event.y > 225 and event.y < 325:
+        data.chooseYes = True
+    elif event.x > 1000 and event.x < 1180 and event.y > 360 and event.y < 460:
+        data.chooseNo = True
     mousePressedZoom(event, data)
 
 #tracks mouse movements on the graph so that 
@@ -158,33 +169,23 @@ def redrawAll(canvas, data):
             data.stock.drawNewsStats(canvas)
         if data.mouseOnGraph == True:
             data.stock.drawPricesAndDate(canvas, data.figX, data.figY)
-        data.stock.drawAdvisor(canvas, data.clickedAdvisor)
+        data.stock.drawAdvisor(canvas, data.chooseYes, data.chooseNo)
+        canvas.create_text(1090, 600, text = "Score: " + str(data.score),
+        font = "Arial 30 bold")
     else:
         #draws start page items
         canvas.create_rectangle(100, 100, data.width - 100, data.height - 100,
         outline = "white", fill = "white")
         canvas.create_text(data.width/2, 150, text = "Stockometer",
         fill = "purple", font = "Symbol 45 bold")
-        canvas.create_image(data.width/2, data.width/4, image = data.pig,
+        canvas.create_image(data.width/2, data.height/4, image = data.pig,
         anchor = NW)
-        drawFakeGraph(canvas, data)
+        canvas.create_image(150, data.height/4, image = data.bullGraph,
+        anchor = NW)
     drawSearchBars(canvas, data)
     drawUserInput(canvas, data)
     data.action = 'no'
 
-#draws a graph just for display on the start page
-def drawFakeGraph(canvas, data):
-    canvas.create_line(150, data.height/2 - 100, 150, data.height/2 + 100,
-    width = 5)
-    canvas.create_line(150, data.height/2 + 100, 350, data.height/2 + 100,
-    width = 5)
-    canvas.create_line(150, data.height/2 + 100,
-    200, data.height/2, width = 2)
-    canvas.create_line(200, data.height/2, 270, data.height/2 + 12,
-    width = 2)
-    canvas.create_line(270, data.height/2 + 12, 300, data.height/2 - 100,
-    width = 2)
-    
 def drawZoomButtons(canvas, data):
     timespans = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", 
     "Max", "30-day\nForecast", "50-day\nForecast"]
