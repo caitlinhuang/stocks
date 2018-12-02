@@ -123,7 +123,7 @@ class Stock(object):
         matplotlib.pyplot.setp(labelsx, rotation=30, fontsize=9)
         matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
         matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
-        matplotlib.pyplot.title(self.company, color = "magenta")
+        matplotlib.pyplot.title(self.company, color = "blue")
         self.lowPrice, self.highPrice = graph.get_ylim()
         self.early, self.recent = graph.get_xlim()
         matplotlib.pyplot.tight_layout()
@@ -256,6 +256,10 @@ class Stock(object):
         canvas.create_rectangle(startNewsBoxX,
         startNewsBoxY + newsBoxHeight + 2, 1000, 700,
         outline = "deep sky blue", fill = "deep sky blue")
+        self.drawTextBoxOutlines(canvas, startNewsBoxX, startNewsBoxY,
+        newsBoxWidth, newsBoxHeight)
+        
+    def drawNewsStats(self, canvas):
         newsStatsX = 350
         newsStatsY = 520
         newsStatsWidth = 400
@@ -278,17 +282,21 @@ class Stock(object):
             titles = titles + self.justifyText(self.newsTitles[i], 90) + "\n"
         canvas.create_text(newsStatsX + 5, newsStatsY + 85, text = titles,
         anchor = NW)
-        self.drawTextBoxOutlines(canvas, startNewsBoxX, startNewsBoxY,
-        newsBoxWidth, newsBoxHeight)
     
     def drawAdvisor(self, canvas, clicked):
-        canvas.create_rectangle(980, 140, 1200, 700, fill = "DarkOrchid3",
-        width = 4)
         if clicked == False:
-            canvas.create_text(983, 143,
-            "Do you think you\nshould buy the stock?\nClick yes or no.",
-            fill = "gold", font = "Symbol 18 bold")
-            #canvas.create_rectangle()
+            canvas.create_rectangle(980, 95, 1200, 495, fill = "white",
+            outline = "DarkOrchid3", width = 4)
+            canvas.create_text(985, 100,
+            text = "Do you think\nyou should buy\nthe stock? Click\nyes or no.",
+            anchor = NW, fill = "gold", font = "Symbol 22 bold")
+            canvas.create_rectangle(1000, 225, 1180, 325, fill = "green")
+            canvas.create_text(1090, 275, text = "YES", fill = "gold",
+            font = "Symbol 16 bold")
+            canvas.create_rectangle(1000, 360, 1180, 460, fill = "red")
+            canvas.create_text(1090, 410, text = "NO", fill = "gold",
+            font = "Symbol 16 bold")
+            
         
     def drawTextBoxOutlines(self, canvas, x, y, width, height):
         canvas.create_line(x, y, x + width, y, fill = "DarkOrchid3", width = 4)
