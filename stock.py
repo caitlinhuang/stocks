@@ -45,15 +45,21 @@ class Stock(object):
         self.lowPrice = 0
         self.highPrice = 0
         self.early = 0
-        self.recnt = 0
+        self.recent = 0
         self.buy = True
         self.timeFrame = timeFrame
+        self.yearStockData = None
 
-#sets the company
+    #sets the company
     def setCompany(self):
-        self.company = getCompanyName('./cname/companyName.csv', self.symbol)
-        if self.company == None:
-            uncleanedName = parse_finance_page(str(self.symbol)).get("company_name")
+        try:
+            if self.company != None:
+                return self.company
+            self.company = getCompanyName('./cname/companyName.csv',
+            self.symbol)
+        except:
+            uncleanedName = \
+            parse_finance_page(str(self.symbol)).get("company_name")
             separatedName = uncleanedName.split(" ")
             name = ""
             for word in separatedName[:-7]:
@@ -127,12 +133,14 @@ class Stock(object):
     def drawPricesAndDate(self, canvas, x, y):
         highPixel = 171
         lowPixel = 404
-        lowDatePix = 113
-        highDatePix = 636
+        lowDatePix = 113 #135
+        highDatePix = 613
         yChange = abs(y - lowPixel)
         difference = abs(self.highPrice - self.lowPrice)
         priceDisplay = (difference * yChange)/(lowPixel - highPixel)
         pixelsFromToday = abs(x - highDatePix)
+        if priceDisplay < 0:
+            priceDisplay = 0
         #high and low are everything on the whole graph
         forecast = 0
         if self.timeFrame == "30 Day Prediction":
@@ -184,6 +192,7 @@ class Stock(object):
     #gets prices for statistical analysis because self.price
     #may skip certain numbers
     def getPricesInOverOneYear(self, fieldname):
+        if self.yearStockData is not None: return self.yearStockData.get(fieldname)
         auth_tok = "c2V_sVydLtbotC8xN8sH"
         uncleanedDate = str(datetime.datetime.now())
         uncleanedStart = str(datetime.datetime.now() - \
@@ -192,6 +201,7 @@ class Stock(object):
         start = uncleanedStart[:10]
         year = quandl.get("EOD/"+ self.symbol, trim_start = start,
         trim_end = end, authtoken=auth_tok)
+        self.yearStockData = year
         return year.get(fieldname)
         
     #calculates the volatility for the stock prices
@@ -270,6 +280,15 @@ class Stock(object):
         anchor = NW)
         self.drawTextBoxOutlines(canvas, startNewsBoxX, startNewsBoxY,
         newsBoxWidth, newsBoxHeight)
+    
+    def drawAdvisor(self, canvas, clicked):
+        canvas.create_rectangle(980, 140, 1200, 700, fill = "DarkOrchid3",
+        width = 4)
+        if clicked == False:
+            canvas.create_text(983, 143,
+            "Do you think you\nshould buy the stock?\nClick yes or no.",
+            fill = "gold", font = "Symbol 18 bold")
+            #canvas.create_rectangle()
         
     def drawTextBoxOutlines(self, canvas, x, y, width, height):
         canvas.create_line(x, y, x + width, y, fill = "DarkOrchid3", width = 4)
