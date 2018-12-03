@@ -3,6 +3,7 @@
 #section G
 
 #code from https://www.scrapehero.com/scrape-nasdaq-stock-market-data/
+#made some modifications to make this more efficient
 #note: This code was only used to get one attribute of the stock 
 #class (the company's name)
 
@@ -38,8 +39,6 @@ def parse_finance_page(ticker):
             response = requests.get(url, headers = headers, verify=False)
             if response.status_code!=200:
                 raise ValueError("Invalid Response Received From Webserver")
-            # Adding random delay
-            #sleep(randint(1,3))	
             parser = html.fromstring(response.text)
             xpath_head = "//div[contains(@id,'pageheader')]//h1//text()"
             xpath_key_stock_table = \

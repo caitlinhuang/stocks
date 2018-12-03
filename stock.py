@@ -53,6 +53,7 @@ class Stock(object):
         self.yearStockData = None
         self.fiftyDayMovingAvg = 0
         self.twoHundredMovingAvg = 0
+        self.dividend = 0
 
     #sets the company
     def setCompany(self):
@@ -106,6 +107,7 @@ class Stock(object):
             stockRawData = quandl.get("EOD/"+ self.symbol, 
             trim_start = self.startTime, trim_end = lstDate[0],
             authtoken=auth_tok)
+        self.dividend = stockRawData.get("Dividend")
         return stockRawData.get(fieldName)
 
     #sets up the graph
@@ -119,8 +121,8 @@ class Stock(object):
             linestyle = "-")
         elif self.timeFrame == "50 Day Prediction":
             self.price = self.getPrices("Adj_Close")
-            dataIn = [self.sScore, self.rScore,
-            self.price.iloc[-1]]
+            dataIn = [['sentimentPositive', self.sScore], ["relevance",
+            self.rScore], self.price.iloc[-1]]
             forecast = nearestNeighbor.nearestNeighbor(dataIn, 50,
             self.volatility * 100, [3, 1])
             graph.plot(forecast, label = "Forecasted 50-Day Closing Prices",
@@ -239,7 +241,7 @@ class Stock(object):
         sqDeviationsTotal = sum(squaresOfDeviations)
         variance = sqDeviationsTotal/(len(squaresOfDeviations) - 1)
         #volality is the square root of the variance
-        return math.sqrt(variance)
+        return 1000 * math.sqrt(variance)
     
     #does the name of the function. finds the mean
     def mean(self, lst):
