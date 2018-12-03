@@ -68,7 +68,8 @@ def mousePressedZoom(event, data):
         data.stock.setEndDate(data.endDate)
         data.stock.setTimeFrame(data.timeFrameStatus)
         data.stock.setPrice(data.stock.getPrices("Adj_Close"))
-        data.stock.drawStockGraph()                
+        data.stock.drawStockGraph()
+        data.clickStockEntry = True
         #isValidStockSym(data)
 
 #sets the dates that the graph will display
