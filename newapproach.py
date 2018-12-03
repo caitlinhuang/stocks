@@ -64,7 +64,12 @@ def mousePressedZoom(event, data):
         indexZoomClick = (event.x - data.xStartButtons)//data.buttonWidth
         data.timeFrameStatus = data.timeFrames[indexZoomClick]
         setDates(data)
-        isValidStockSym(data)
+        data.stock.setStartDate(data.startDate)
+        data.stock.setEndDate(data.endDate)
+        data.stock.setTimeFrame(data.timeFrameStatus)
+        data.stock.setPrice(data.stock.getPrices("Adj_Close"))
+        data.stock.drawStockGraph()                
+        #isValidStockSym(data)
 
 #sets the dates that the graph will display
 def setDates(data):
@@ -164,9 +169,8 @@ def redrawAll(canvas, data):
         drawZoomButtons(canvas, data)
         data.stock.drawStockFigure(canvas)
         data.stock.drawStockAnalysisFigure(canvas)
-        if data.timeFrameStatus == "5 Years" or data.timeFrameStatus == "Max":
-            data.stock.drawStockNewsFigure(canvas, data.scroll)
-            data.stock.drawNewsStats(canvas)
+        data.stock.drawStockNewsFigure(canvas, data.scroll)
+        data.stock.drawNewsStats(canvas)
         if data.mouseOnGraph == True:
             data.stock.drawPricesAndDate(canvas, data.figX, data.figY)
         data.stock.drawAdvisor(canvas, data.chooseYes, data.chooseNo)

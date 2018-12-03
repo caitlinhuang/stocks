@@ -33,7 +33,7 @@ def nearestNeighbor(dataIn, steps, randomness, weights = [1]):
     for i in range(len(train.index)):
         individualDistance = 0
         for j in range(len(dataIn) - 1):
-            individualDistance += (dataIn[j][1] - train.iloc[[i],
+            individualDistance += (float(dataIn[j][1]) - train.iloc[[i],
             :].get(dataIn[j][0]).values[0])**2 * weights[j]
         distance.append(math.sqrt(individualDistance))
     minDistance = min(distance)
@@ -48,7 +48,7 @@ def nearestNeighbor(dataIn, steps, randomness, weights = [1]):
     weightedSlope = (slopeSent * weights[0] + slopeRel * \
     weights[1])/(weights[0] + weights[1])
     for i in range(steps):
-        prevValue = prevValue + (weightedSlope * minDistance) + difference + \
+        prevValue = prevValue + (weightedSlope * minDistance * difference) + \
         (random.random() * random.choice([-1, 1]) * randomness/10)
         predictions.append(round(prevValue, 2))
     todayExact = datetime.now()

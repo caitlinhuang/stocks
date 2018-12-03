@@ -55,6 +55,24 @@ class Stock(object):
         self.dividend = 0
         self.volatility = self.getVolatility()
 
+    #sets the startDate
+    def setStartDate(self, startDate):
+        sDate = startDate.split('-')
+        self.startTime = sDate[0] + sDate[1] + sDate[2]
+
+    #sets the endDate
+    def setEndDate(self, endDate):
+        today = endDate.split('-')
+        self.endTime = today[0] + today[1] + today[2]
+
+    #sets the timeFrame
+    def setTimeFrame(self, timeFrame):
+        self.timeFrame = timeFrame
+
+    #setPrice
+    def setPrice(self, price):
+        self.price = price
+
     #sets the company
     def setCompany(self):
         try:
@@ -96,7 +114,8 @@ class Stock(object):
         uncleanedDate = str(datetime.datetime.now())
         lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/" + self.symbol,
-            authtoken = auth_tok, collapse = "annually")
+            authtoken = auth_tok, collapse = "annual")
+        #print("annuak = ", stockRawData)
         if self.startTime == "19800101":
             pass
         elif int(self.endTime[:4]) - int(self.startTime[:4]) == 5:
@@ -336,6 +355,7 @@ class Stock(object):
     #searches in the dataset for articles relevant to the company and calls a 
     #function that does analysis on the sentiment and relevance
     def getStockNewsData(self):
+        print("getStockNewsData")
         companyName = ''
         if(self.company==None):
             companyName = self.setCompany()
@@ -350,7 +370,7 @@ class Stock(object):
             keyWord02 = ' '
         (sScore, rScore, newsTitles,
         stories) = newsPreProcess("./news/Full-Economic-News-DFE-839861.csv",
-        keyWord01, keyWord02, self.startTime, self.endTime)
+        keyWord01, keyWord02, '19800101', self.endTime)
         return sScore, rScore, newsTitles, stories
     
     #modified version of justify text from HW 3
