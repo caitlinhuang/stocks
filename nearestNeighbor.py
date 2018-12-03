@@ -8,6 +8,7 @@ import math
 import random
 from datetime import datetime, timedelta
 from scipy import stats
+from scipy.optimize import curve_fit
 import numpy
 
 def antiError():
@@ -15,15 +16,12 @@ def antiError():
     data = \
     pd.read_csv("/Users/caitlinhuang/Desktop/15112/termproject/marketDemoTrain.csv",
     names = columns)
-    sent = data.sentimentPositive.tolist()
-    rel = data.relevance.tolist()
-    returns = data.returnsClosePrevRaw1.tolist()
-    sent.sort()
-    rel.sort()
-    returns.sort()
-    slopeSent = stats.linregress(numpy.array(sent), numpy.array(returns))[0]
-    slopeRel = stats.linregress(numpy.array(rel), numpy.array(returns))[0]
-    return slopeSent, slopeRel
+    sent = data.sentimentPositive.tolist()[1:]
+    rel = data.relevance.tolist()[1:]
+    returns = data.returnsClosePrevRaw1.tolist()[1:]
+    slopeSent = numpy.polyfit(numpy.array(sent).astype(float), numpy.array(returns).astype(float), 1)
+    slopeRel = numpy.polyfit(numpy.array(rel).astype(float), numpy.array(returns).astype(float), 1)
+    return slopeSent[0], slopeRel[1]
 
 #the algorithm is nonweighted by default. The weights can be adjusted.
 def nearestNeighbor(dataIn, steps, randomness, weights = [1]):
@@ -47,21 +45,18 @@ def nearestNeighbor(dataIn, steps, randomness, weights = [1]):
     predictions = list()
     prevValue = dataIn[-1] #last index is the predicted value
     slopeSent, slopeRel = antiError()
-    weightedSlope = (slopeSent * weight[0] + slopeRel * \
-    weight[1])/(weight[0] + weight[1])
+    weightedSlope = (slopeSent * weights[0] + slopeRel * \
+    weights[1])/(weights[0] + weights[1])
     for i in range(steps):
         prevValue = prevValue + (weightedSlope * minDistance) + difference + \
-        (random.choice([-1,1]) * random.random())
+        (random.random() * random.choice([-1, 1]) * randomness/10)
         predictions.append(round(prevValue, 2))
     todayExact = datetime.now()
     days = pd.date_range(todayExact, todayExact + timedelta(steps-1), freq='D')
     forecastPrices = pd.DataFrame({'date': days, 'Price': predictions})
     forecastPrices = forecastPrices.set_index('date')
     return forecastPrices
-#print(nearestNeighbor([['sentimentPositive', 0.18], ["relevance", 0.5], 179],
-#30, 16, weights = [3, 1]))
 #gets error from the estimate of the nearest neighbor and takes that in account
-
 
 def convertReturnsToDifferences(close1, close2, data):
     pass

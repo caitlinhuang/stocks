@@ -40,7 +40,7 @@ class Stock(object):
         self.endTime = today[0] + today[1] + today[2]
         sDate = startDate.split('-')
         self.startTime = sDate[0] + sDate[1] + sDate[2]
-        self.price = list()
+        self.price = self.getPrices("Adj_Close")
         (self.sScore, self.rScore, self.newsTitles, 
         self.stories) = self.getStockNewsData()
         self.lowPrice = 0
@@ -48,12 +48,12 @@ class Stock(object):
         self.early = 0
         self.recent = 0
         self.buy = True
-        self.volatility = 0
         self.timeFrame = timeFrame
         self.yearStockData = None
         self.fiftyDayMovingAvg = 0
         self.twoHundredMovingAvg = 0
         self.dividend = 0
+        self.volatility = self.getVolatility()
 
     #sets the company
     def setCompany(self):
@@ -120,15 +120,15 @@ class Stock(object):
             graph.plot(forecast, label = "Forecasted 30-Day Closing Prices",
             linestyle = "-")
         elif self.timeFrame == "50 Day Prediction":
-            self.price = self.getPrices("Adj_Close")
+            #self.price = self.getPrices("Adj_Close")
             dataIn = [['sentimentPositive', self.sScore], ["relevance",
             self.rScore], self.price.iloc[-1]]
             forecast = nearestNeighbor.nearestNeighbor(dataIn, 50,
-            self.volatility * 100, [3, 1])
+            self.volatility, [3, 1])
             graph.plot(forecast, label = "Forecasted 50-Day Closing Prices",
             linestyle = "-")
         else:
-            self.price = self.getPrices('Adj_Close')
+            #self.price = self.getPrices('Adj_Close')
             graph.plot(self.price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
         graph.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(6))
@@ -188,7 +188,6 @@ class Stock(object):
         text = "200-Day Moving Average: " + str(round(self.twoHundredMovingAvg,
         2)),
         anchor = W)
-        self.volatility = self.getVolatility()
         canvas.create_text((loc[0] + 10, loc[1] + 490),
         text = "Volatility: " + str(round(self.volatility, 3)), anchor = W)
         
@@ -241,7 +240,8 @@ class Stock(object):
         sqDeviationsTotal = sum(squaresOfDeviations)
         variance = sqDeviationsTotal/(len(squaresOfDeviations) - 1)
         #volality is the square root of the variance
-        return 1000 * math.sqrt(variance)
+        self.volatility = 1000 * math.sqrt(variance)
+        return self.volatility
     
     #does the name of the function. finds the mean
     def mean(self, lst):
