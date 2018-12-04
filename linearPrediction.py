@@ -15,7 +15,6 @@ from sklearn import preprocessing
 
 #forecasts stock prices 30 days into the future through linear regression
 def forecast30Days(symbol):
-    
     auth_tok = "c2V_sVydLtbotC8xN8sH"
     today = datetime.now()
     today = str(today)[:10]

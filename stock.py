@@ -52,9 +52,9 @@ class Stock(object):
         self.yearStockData = None
         self.fiftyDayMovingAvg = 0
         self.twoHundredMovingAvg = 0
-        self.dividend = 0
         self.volatility = self.getVolatility()
-
+        self.returns = self.getReturns()
+    
     #sets the startDate
     def setStartDate(self, startDate):
         sDate = startDate.split('-')
@@ -115,7 +115,6 @@ class Stock(object):
         lstDate = uncleanedDate.split(" ")
         stockRawData = quandl.get("EOD/" + self.symbol,
             authtoken = auth_tok, collapse = "annual")
-        #print("annuak = ", stockRawData)
         if self.startTime == "19800101":
             pass
         elif int(self.endTime[:4]) - int(self.startTime[:4]) == 5:
@@ -126,7 +125,6 @@ class Stock(object):
             stockRawData = quandl.get("EOD/"+ self.symbol, 
             trim_start = self.startTime, trim_end = lstDate[0],
             authtoken=auth_tok)
-        self.dividend = stockRawData.get("Dividend")
         return stockRawData.get(fieldName)
 
     #sets up the graph
@@ -139,7 +137,6 @@ class Stock(object):
             graph.plot(forecast, label = "Forecasted 30-Day Closing Prices",
             linestyle = "-")
         elif self.timeFrame == "50 Day Prediction":
-            #self.price = self.getPrices("Adj_Close")
             dataIn = [['sentimentPositive', self.sScore], ["relevance",
             self.rScore], self.price.iloc[-1]]
             forecast = nearestNeighbor.nearestNeighbor(dataIn, 50,
@@ -166,7 +163,7 @@ class Stock(object):
     def drawPricesAndDate(self, canvas, x, y):
         highPixel = 171
         lowPixel = 404
-        lowDatePix = 113 #135
+        lowDatePix = 113
         highDatePix = 613
         yChange = abs(y - lowPixel)
         difference = abs(self.highPrice - self.lowPrice)
@@ -220,8 +217,6 @@ class Stock(object):
         fiftyMoveAvg = self.mean(last50)
         last200 = recentPrices[-200:]
         twoHundredMoveAvg = self.mean(last200)
-        if fiftyMoveAvg < twoHundredMoveAvg:
-            self.buy = False
         return fiftyMoveAvg, twoHundredMoveAvg
     
     #gets prices for statistical analysis because self.price
@@ -235,7 +230,7 @@ class Stock(object):
         dateutil.relativedelta.relativedelta(months = 14))
         end = uncleanedDate[:10]
         start = uncleanedStart[:10]
-        year = quandl.get("EOD/"+ self.symbol, trim_start = start,
+        year = quandl.get("EOD/" + self.symbol, trim_start = start,
         trim_end = end, authtoken=auth_tok)
         self.yearStockData = year
         return year.get(fieldname)
@@ -278,9 +273,9 @@ class Stock(object):
         startNewsBoxY = 95
         newsBoxWidth = 280
         newsBoxHeight = 400
-        canvas.create_rectangle(startNewsBoxX, startNewsBoxY,
-        950, startNewsBoxY + newsBoxHeight,
-        outline = "DarkOrchid3", fill = "white", width = 4)
+        canvas.create_rectangle(startNewsBoxX, startNewsBoxY, 950, 
+        startNewsBoxY + newsBoxHeight, outline = "DarkOrchid3", 
+        fill = "white", width = 4)
         newspaper = ""
         for i in range(len(self.stories)):
             newspaper = newspaper + \
@@ -319,30 +314,62 @@ class Stock(object):
             titles = titles + self.justifyText(self.newsTitles[i], 90) + "\n"
         canvas.create_text(newsStatsX + 5, newsStatsY + 85, text = titles,
         anchor = NW)
+        
+    def drawAdvisorInactive(self, canvas):
+        canvas.create_text(985, 100,
+        text = "Do you think\nyou should buy\nthe stock? Click\nyes or no.",
+        anchor = NW, fill = "gold", font = "Symbol 22 bold")
+        canvas.create_rectangle(1000, 225, 1180, 325, fill = "green")
+        canvas.create_text(1090, 275, text = "YES", fill = "gold",
+        font = "Symbol 16 bold")
+        canvas.create_rectangle(1000, 360, 1180, 460, fill = "red")
+        canvas.create_text(1090, 410, text = "NO", fill = "gold",
+        font = "Symbol 16 bold")
     
     def drawAdvisor(self, canvas, yes, no):
-        if yes == False and no == False:
-            canvas.create_rectangle(980, 95, 1200, 495, fill = "white",
-            outline = "DarkOrchid3", width = 4)
-            canvas.create_text(985, 100,
-            text = "Do you think\nyou should buy\nthe stock? Click\nyes or no.",
-            anchor = NW, fill = "gold", font = "Symbol 22 bold")
-            canvas.create_rectangle(1000, 225, 1180, 325, fill = "green")
-            canvas.create_text(1090, 275, text = "YES", fill = "gold",
-            font = "Symbol 16 bold")
-            canvas.create_rectangle(1000, 360, 1180, 460, fill = "red")
-            canvas.create_text(1090, 410, text = "NO", fill = "gold",
-            font = "Symbol 16 bold")
+        canvas.create_rectangle(980, 95, 1200, 495, fill = "white",
+        outline = "DarkOrchid3", width = 4)
+        if yes == False and no == False: self.drawAdvisorInactive(canvas)
         else:
-            text = ""
+            advice = ""
+            if self.returns > 0.75 and \
+            self.fiftyDayMovingAvg > self.twoHundredMovingAvg: self.buy = True
+            else: self.buy = False
+            if (yes == True and self.buy == True) or \
+            (no == True and self.buy == False):
+                advice = advice + "You are correct!\n"
+            else: advice = advice + "That may not be the best idea. "
             if self.buy == False:
-                text = text + "You should not buy the stock because\n" 
+                advice = advice + "You should not buy the stock. " 
                 if self.fiftyDayMovingAvg < self.twoHundredMovingAvg:
-                    text = text + "the fifty day moving average is less than the\ntwo hundred day moving average.\n"
-                    text = text + "This is known as the death cross. This\n"
-                    text = text + "indicates that stock prices will decrease."
-                text = text + "You are estimated a return of "
-            
+                    advice = advice + "The fifty day moving average is less than the two hundred day moving average. "
+                    advice = advice + "This is known as the death cross. This "
+                    advice = advice + \
+                    "indicates that stock prices will decrease. "
+                if self.returns < 0.75:
+                    advice = advice + \
+                    "You are better off investing in CDs, which will has a 0.75% Annual percent yield "
+            else:
+                advice = advice + "You should invest in the stock because "
+                advice = advice + "the fifty day moving average is greater "
+                advice = advice + "than the two-hundred day moving average "
+                advice = advice + "This indicates that the prices are on an "
+                advice = advice + "upward trend. "
+            advice = advice + "You have an estimated return of " + \
+            str(round(self.returns, 3)) + " % per share in two months."
+            canvas.create_text(985, 100, text = self.justifyText(advice, 29),
+            anchor = NW)
+
+    def getReturns(self):
+        dataIn = [['sentimentPositive', self.sScore], ["relevance",
+        self.rScore], self.price.iloc[-1]]
+        lastPrediction = nearestNeighbor.nearestNeighbor(dataIn, 50,
+        self.volatility, [3, 1]).iloc[-1]
+        return (lastPrediction.values[0] - \
+        self.price.iloc[-1])/self.price.iloc[-1]
+        
+    def moneyMade(self):
+        return self.returns * self.price.iloc[-1]
         
     def drawTextBoxOutlines(self, canvas, x, y, width, height):
         canvas.create_line(x, y, x + width, y, fill = "DarkOrchid3", width = 4)
@@ -355,7 +382,6 @@ class Stock(object):
     #searches in the dataset for articles relevant to the company and calls a 
     #function that does analysis on the sentiment and relevance
     def getStockNewsData(self):
-        print("getStockNewsData")
         companyName = ''
         if(self.company==None):
             companyName = self.setCompany()
@@ -399,6 +425,3 @@ class Stock(object):
 
     def __eq__(self,other):
         return isinstance(other,Stock) and self.symbol==other.symbol
-
-    """def __hash__(self):
-        hash((self.symbol))"""

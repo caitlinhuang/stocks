@@ -110,8 +110,10 @@ def mousePressed(event, data):
         data.clickStockEntry = True
     elif event.x > 1000 and event.x < 1180 and event.y > 225 and event.y < 325:
         data.chooseYes = True
+        data.score += data.stock.moneyMade()
     elif event.x > 1000 and event.x < 1180 and event.y > 360 and event.y < 460:
         data.chooseNo = True
+        data.score -= data.stock.moneyMade()
     mousePressedZoom(event, data)
 
 #tracks mouse movements on the graph so that 
@@ -132,6 +134,8 @@ def keyPressed(event, data):
                 data.stockSym = data.stockSym[: -1]
         elif event.keysym == "Up":
             data.scroll -= data.scrollAmount
+            if data.scroll <= 0:
+                data.scroll = 0
         elif event.keysym == "Down":
             data.scroll += data.scrollAmount
         elif event.keysym != "Return" and event.keysym != "BackSpace" and \
@@ -139,9 +143,10 @@ def keyPressed(event, data):
             data.stockSym += event.char
         elif event.keysym == "Return":
             data.retrieving = True
+            data.chooseNo = False
+            data.chooseYes = False
             isValidStockSym(data)
-        
-            
+
 #tries to make a Stock object. If the user typed something 
 #that is invalid, there is a warning message
 def isValidStockSym(data):
@@ -175,8 +180,8 @@ def redrawAll(canvas, data):
         if data.mouseOnGraph == True:
             data.stock.drawPricesAndDate(canvas, data.figX, data.figY)
         data.stock.drawAdvisor(canvas, data.chooseYes, data.chooseNo)
-        canvas.create_text(1090, 600, text = "Score: " + str(data.score),
-        font = "Arial 30 bold")
+        canvas.create_text(1090, 600,
+        text = "Score: $ " + str(round(data.score, 2)), font = "Arial 30 bold")
     else:
         #draws start page items
         canvas.create_rectangle(100, 100, data.width - 100, data.height - 100,
@@ -254,7 +259,7 @@ def run(width=300, height=300):
     data = Struct()
     data.width = width
     data.height = height
-    data.timerDelay = 300 # milliseconds
+    data.timerDelay = 100 # milliseconds
     root = Tk()
     root.resizable(width=False, height=False) # prevents resizing window
     init(data)

@@ -42,10 +42,7 @@ def newsPreProcess(file, keyWord01, keyWord02, startDate, endDate):
     (sCount, rCount) = (0, 0)
     for i in range(len(df.index)):
         text = df.iloc[[i], :].get('text').values[0]
-        dateBeforeClean = df.iloc[[i], :].get('date').values[0]
-        date = int(convertDate(dateBeforeClean))
-        if (keyWord01 in text or keyWord02 in text) and \
-        (date >= int(startDate) and date <= int(endDate)):
+        if (keyWord01 in text or keyWord02 in text):
             sentiment = df.iloc[[i], :].get('positivity').values[0]
             relevance = df.iloc[[i], :].get('relevance').values[0]
             if(isFloat(sentiment)):
