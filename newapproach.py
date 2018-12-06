@@ -33,8 +33,7 @@ def init(data):
     data.stock = None
     data.mouseOnGraph = False
     #parameters for where the mouse is pointing to on the figure
-    data.figX = 0
-    data.figY = 0
+    (data.figX, data.figY) = (0, 0)
     data.action = 'yes'
     #photo from https://www.flickr.com/photos/pictures-of-money/16678606754
     data.pig = PhotoImage(file = "pig.png")
@@ -42,16 +41,13 @@ def init(data):
     #https://www.vectorstock.com/royalty-free-vector/up-bull-market-rise-bullish-stock-chart-graph-vector-510738
     data.bullGraph = PhotoImage(file = "bull.png")
     data.bullGraph = data.bullGraph.subsample(2, 2)
-    data.scroll = 0
-    data.scrollAmount = 30
-    data.xStartButtons = 52
-    data.yStartButtons = 95
-    data.buttonHeight = 40
-    data.buttonWidth = 75
+    (data.scroll, data.scrollAmount) = (0, 30)
+    (data.xStartButtons, data.yStartButtons) = (52, 95)
+    (data.buttonHeight, data.buttonWidth) = (40, 75)
     data.numButtons = 8
-    data.chooseYes = False
-    data.chooseNo = False
+    (data.chooseYes, data.chooseNo) = (False, False)
     data.score = 0
+    data.term = None
 
 #tracks which time periods the user wants to see
 def mousePressedZoom(event, data):
@@ -70,7 +66,6 @@ def mousePressedZoom(event, data):
         data.stock.setPrice(data.stock.getPrices("Adj_Close"))
         data.stock.drawStockGraph()
         data.clickStockEntry = True
-        #isValidStockSym(data)
 
 #sets the dates that the graph will display
 def setDates(data):
@@ -119,11 +114,27 @@ def mousePressed(event, data):
 #tracks mouse movements on the graph so that 
 #the stock price can be displayed where the user's mouse is
 def mouseMovement(event, data):
+    data.term = None
     if event.y > 171 and event.y < 404 and event.x > 135 and event.x < 612:
         data.action = 'yes'
         data.figX = event.x
         data.figY = event.y
         data.mouseOnGraph = True
+    elif event.y > 150 and event.y < 165 and event.x < 1095 and event.x > 1060:
+        data.action = "yes"
+        data.term = "CD"
+    elif event.y > 165 and event.y < 178 and event.x < 1170 and event.x < 1030:
+        data.action = "yes"
+        data.term = "APR"
+    elif event.x > 60 and event.x < 240 and event.y < 575 and event.y > 565:
+        data.action = "yes"
+        data.term = "50"
+    elif event.x > 60 and event.x < 240 and event.y < 605 and event.y > 595:
+        data.action = "yes"
+        data.term = "200"
+    elif event.x > 60 and event.x < 100 and event.y < 635 and event.y > 625:
+        data.action = "yes"
+        data.term = "vol"
 
 #allows the user to type in the stock symbol
 def keyPressed(event, data):
@@ -138,6 +149,8 @@ def keyPressed(event, data):
                 data.scroll = 0
         elif event.keysym == "Down":
             data.scroll += data.scrollAmount
+            if data.scroll >= 8 * data.stock.newsLines:
+                data.scroll = 8 * data.stock.newsLines
         elif event.keysym != "Return" and event.keysym != "BackSpace" and \
         len(data.stockSym) < 25:
             data.stockSym += event.char
@@ -145,6 +158,7 @@ def keyPressed(event, data):
             data.retrieving = True
             data.chooseNo = False
             data.chooseYes = False
+            data.scroll = 0
             isValidStockSym(data)
 
 #tries to make a Stock object. If the user typed something 
@@ -194,19 +208,62 @@ def redrawAll(canvas, data):
         anchor = NW)
     drawSearchBars(canvas, data)
     drawUserInput(canvas, data)
+    drawDefinitions(canvas, data)
     data.action = 'no'
-
+    
+def drawDefinitions(canvas, data):
+    if (data.chooseYes == True or data.chooseNo == True) and \
+    data.stock.buy == False:
+        if data.term == "CD":
+            drawCDDef(canvas, data)
+        elif data.term == "APR":
+            defn = "The effective annual rate of return "
+            defn = defn + "taking in account compounding interest"
+            canvas.create_rectangle(1000, 120, 1180, 165, fill = "white",
+            outline = "DarkOrchid3", width = 4)
+            canvas.create_text(1003, 123, text = defn, anchor = NW,
+            font = "Times 12 italic", width = 175)
+    elif data.stockSym != None:
+        y = 0
+        if data.term == "50" or data.term == "200" or data.term == "vol":
+            if data.term == "50":
+                y = 500
+                defn = "The average closing price over the last 50 days"
+            elif data.term == "200":
+                y = 530
+                defn = "The average closing price over the last 200 days"
+            else:
+                defn = "The measure of the range of values of returns"
+                defn = defn + " of a security."
+                y = 560
+            canvas.create_rectangle(45, y, 200, y + 60, fill = "white",
+            outline = "DarkOrchid3", width = 4)
+            canvas.create_text(50, y + 3, text = defn, anchor = NW,
+            font = "Times 14 italic", width = 145)
+        
+def drawCDDef(canvas, data):
+    #referenced https://www.bankrate.com/glossary/c/certificate-of-deposit/
+    defn = "A CD (certificate of deposit) is a kind of savings account that"
+    defn = defn + " restricts your access to the money you invest but has "      
+    defn = defn + "higher interest rates than those of regular savings"
+    defn = defn + " accounts. The deposit gains value over a period of time"
+    defn = defn + " that was agreed upon."
+    canvas.create_rectangle(1000, 30, 1180, 145, 
+    fill = "white", outline = "DarkOrchid3", width = 4)
+    canvas.create_text(1003, 33, text = defn, anchor = NW,
+    font = "Times 12 italic", width = 175)
+        
 def drawZoomButtons(canvas, data):
     timespans = ["1 Week", "1 Month", "6 Months", "1 Year", "5 Years", 
     "Max", "30-day\nForecast", "50-day\nForecast"]
     for i in range(data.numButtons):
-        color = "DarkOrchid1"
-        if i % 2 == 0:
-            color = "cyan"
+        color = "khaki1"
+        if data.timeFrameStatus == data.timeFrames[i]:
+            color = "forest green"
         canvas.create_rectangle(data.xStartButtons + i * data.buttonWidth,
         data.yStartButtons, data.xStartButtons + (i + 1) * data.buttonWidth,
         data.yStartButtons + data.buttonHeight, 
-        fill = color, outline = "spring green", width = 3)
+        fill = color, outline = "grey", width = 3)
         canvas.create_text(data.xStartButtons + data.buttonWidth/2 + data.buttonWidth * i, 
         data.yStartButtons + data.buttonHeight/2, text = timespans[i])
     

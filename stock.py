@@ -54,6 +54,7 @@ class Stock(object):
         self.twoHundredMovingAvg = 0
         self.volatility = self.getVolatility()
         self.returns = self.getReturns()
+        self.newsLines = 0
     
     #sets the startDate
     def setStartDate(self, startDate):
@@ -144,16 +145,15 @@ class Stock(object):
             graph.plot(forecast, label = "Forecasted 50-Day Closing Prices",
             linestyle = "-")
         else:
-            #self.price = self.getPrices('Adj_Close')
             graph.plot(self.price, label = "Close Price", linestyle = '-')
         graph.grid(True, which = "major", axis = "both", color = "blue")
         graph.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(6))
         graph.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%Y-%m-%d"))
         labelsx = graph.get_xticklabels()
         matplotlib.pyplot.setp(labelsx, rotation=30, fontsize=9)
-        matplotlib.pyplot.xlabel("Date", color = "blue", fontsize = 12)
-        matplotlib.pyplot.ylabel("Prices", color = "blue", fontsize = 12)
-        matplotlib.pyplot.title(self.company, color = "blue")
+        matplotlib.pyplot.xlabel("Date", color = "yellow", fontsize = 14)
+        matplotlib.pyplot.ylabel("Prices", color = "yellow", fontsize = 14)
+        matplotlib.pyplot.title(self.company, color = "yellow")
         self.lowPrice, self.highPrice = graph.get_ylim()
         self.early, self.recent = graph.get_xlim()
         matplotlib.pyplot.tight_layout()
@@ -198,12 +198,10 @@ class Stock(object):
         self.twoHundredMovingAvg) = self.get50And200DayMovingAvg()
         canvas.create_text((loc[0] + 10, loc[1] + 430),
         text = "50-Day Moving Average: " + str(round(self.fiftyDayMovingAvg,
-        2)),
-        anchor = W)
+        2)), anchor = W)
         canvas.create_text((loc[0] + 10, loc[1] + 460),
         text = "200-Day Moving Average: " + str(round(self.twoHundredMovingAvg,
-        2)),
-        anchor = W)
+        2)), anchor = W)
         canvas.create_text((loc[0] + 10, loc[1] + 490),
         text = "Volatility: " + str(round(self.volatility, 3)), anchor = W)
         
@@ -277,9 +275,12 @@ class Stock(object):
         startNewsBoxY + newsBoxHeight, outline = "DarkOrchid3", 
         fill = "white", width = 4)
         newspaper = ""
+        self.newsLines = 0
         for i in range(len(self.stories)):
             newspaper = newspaper + \
-            self.justifyText(self.stories[i], 38) + "\n" + ("_" * 45) + "\n"
+            self.justifyText(self.stories[i], 38)[0] + "\n" + ("_" * 45) + "\n"
+            self.newsLines = self.newsLines + self.justifyText(self.stories[i],
+            38)[1] + 1
         canvas.create_text(startNewsBoxX + 3, startNewsBoxY + 3 - scroll,
         text = newspaper, anchor = NW)
         #covers unneeded text when being scrolled
@@ -311,14 +312,14 @@ class Stock(object):
         text = "News Titles: ", anchor = NW, font = "Symbol 14 bold")
         titles = ""
         for i in range(len(self.newsTitles)):
-            titles = titles + self.justifyText(self.newsTitles[i], 90) + "\n"
+            titles = titles + self.justifyText(self.newsTitles[i], 90)[0] + "\n"
         canvas.create_text(newsStatsX + 5, newsStatsY + 85, text = titles,
         anchor = NW)
         
     def drawAdvisorInactive(self, canvas):
-        canvas.create_text(985, 100,
-        text = "Do you think\nyou should buy\nthe stock? Click\nyes or no.",
-        anchor = NW, fill = "gold", font = "Symbol 22 bold")
+        canvas.create_text(997, 112,
+        text = "Do you think you should buy the stock? Click yes or no.",
+        anchor = NW, font = "Symbol 18 bold", width = 170)
         canvas.create_rectangle(1000, 225, 1180, 325, fill = "green")
         canvas.create_text(1090, 275, text = "YES", fill = "gold",
         font = "Symbol 16 bold")
@@ -341,14 +342,14 @@ class Stock(object):
             else: advice = advice + "That may not be the best idea. "
             if self.buy == False:
                 advice = advice + "You should not buy the stock. " 
+                if self.returns < 0.75:
+                    advice = advice + \
+                    "You are better off investing in CDs, which has a 0.75% Annual percent yield "
                 if self.fiftyDayMovingAvg < self.twoHundredMovingAvg:
                     advice = advice + "The fifty day moving average is less than the two hundred day moving average. "
                     advice = advice + "This is known as the death cross. This "
                     advice = advice + \
                     "indicates that stock prices will decrease. "
-                if self.returns < 0.75:
-                    advice = advice + \
-                    "You are better off investing in CDs, which will has a 0.75% Annual percent yield "
             else:
                 advice = advice + "You should invest in the stock because "
                 advice = advice + "the fifty day moving average is greater "
@@ -357,7 +358,7 @@ class Stock(object):
                 advice = advice + "upward trend. "
             advice = advice + "You have an estimated return of " + \
             str(round(self.returns, 3)) + " % per share in two months."
-            canvas.create_text(985, 100, text = self.justifyText(advice, 29),
+            canvas.create_text(985, 100, text = self.justifyText(advice, 29)[0],
             anchor = NW)
 
     def getReturns(self):
@@ -403,6 +404,7 @@ class Stock(object):
     def justifyText(self, text, width):
         #returns a string with same width on each line
         justified = ""
+        lines = 0
         text = self.antiParagraphBreak(text)
         #slice lines from the text while it is greater than the width
         while len(text) > width:
@@ -412,8 +414,10 @@ class Stock(object):
                     text = text[c + 1:]
                     break
             justified = justified + line + "\n"
+            lines += 1
         justified = justified + text
-        return justified
+        lines += 1
+        return justified, lines
 
     def antiParagraphBreak(self, text):
         #gets rid of paragraph break characters in text
